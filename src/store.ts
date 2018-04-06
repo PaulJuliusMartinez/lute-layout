@@ -8,21 +8,16 @@ import {
 } from "redux"
 import { createLogger } from "redux-logger"
 
-// import { stubState, StubState } from "stub-state"
-interface StubState {}
-const defaultStubState: StubState = {}
-function stubState(state = defaultStubState, action: any): StubState {
-  return state
-}
+import { elements, ElementsState } from "elements-reducer"
 
 export interface Store {
-  stubState: StubState
+  elements: ElementsState
 }
 
 export type Dispatch = ReduxDispatch<Store>
 
 const rootReducer = combineReducers<Store>({
-  stubState,
+  elements,
 })
 
 const logger = createLogger({
