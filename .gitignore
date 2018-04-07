@@ -1,0 +1,13 @@
+# dependencies
+node_modules
+
+# build (except entry point)
+dist/*
+!dist/index.html
+
+# misc
+.DS_Store
+.env
+npm-debug.log
+yarn-error.log
+*.sw[pon]
