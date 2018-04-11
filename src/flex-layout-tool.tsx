@@ -4,6 +4,7 @@ import ElementController from "element-controller"
 import FlexElement, { DEFAULT_COLOR, DEFAULT_WIDTH, FocusInfo } from "flex-element"
 import FlexLayoutDivider from "flex-layout-divider"
 import TreeElement from "tree-element"
+import TreeModifier from "tree-modifier"
 
 interface State {
   focusInfo: FocusInfo
@@ -37,7 +38,7 @@ export default class FlexLayoutTool extends React.Component<{}, State> {
           <TreeElement />
         </div>
         <FlexLayoutDivider horizontal={true} />
-        <div>Tree Actions Here</div>
+        <TreeModifier />
         <FlexLayoutDivider vertical={true} />
         <div className="flex-layout-tool-sidebar">
           <ElementController focusInfo={this.state.focusInfo} />
