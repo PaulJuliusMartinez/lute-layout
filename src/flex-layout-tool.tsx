@@ -1,12 +1,9 @@
 import * as React from "react"
 
 import ElementController from "element-controller"
-import FlexElement, {
-  DEFAULT_COLOR,
-  DEFAULT_WIDTH,
-  FocusInfo,
-} from "flex-element"
+import FlexElement, { DEFAULT_COLOR, DEFAULT_WIDTH, FocusInfo } from "flex-element"
 import FlexLayoutDivider from "flex-layout-divider"
+import TreeElement from "tree-element"
 
 interface State {
   focusInfo: FocusInfo
@@ -22,6 +19,7 @@ export default class FlexLayoutTool extends React.Component<{}, State> {
     return (
       <div className="flex-layout-tool">
         <div className="flex-layout">
+          {/*
           <FlexElement
             id={0}
             addSiblingBefore={() => alert("Can't add siblings to root.")}
@@ -35,8 +33,12 @@ export default class FlexLayoutTool extends React.Component<{}, State> {
             focus={focusInfo => this.setState({ focusInfo })}
             parentFlex={false}
           />
+           */}
+          <TreeElement />
         </div>
-        <FlexLayoutDivider />
+        <FlexLayoutDivider horizontal={true} />
+        <div>Tree Actions Here</div>
+        <FlexLayoutDivider vertical={true} />
         <div className="flex-layout-tool-sidebar">
           <ElementController focusInfo={this.state.focusInfo} />
         </div>

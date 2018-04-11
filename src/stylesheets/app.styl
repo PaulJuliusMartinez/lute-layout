@@ -9,23 +9,40 @@ body
   margin 0
 
 body
-  --sidebar-size 300px
+  --sidebar-width 300px
+  --bottombar-height 200px
 
 #app-container
+  width 100vw
   height 100vh
 
 .flex-layout-tool
   display grid
-  grid-template-rows 100%
-  grid-template-columns auto 16px var(--sidebar-size)
+  grid-template-rows auto 16px var(--bottombar-height)
+  grid-template-columns auto 16px var(--sidebar-width)
+  grid-template-areas "layout v-divider style" \
+                      "h-divider v-divider style" \
+                      "tree v-divider style"
   height 100%
 
 .flex-layout
-  width calc(100vw - 16px - var(--sidebar-size))
+  width calc(100vw - 16px - var(--sidebar-width))
+  grid-area layout
 
 .flex-layout-divider
   background-color black
-  cursor: ew-resize;
+
+  &.vertical
+    cursor: ew-resize;
+    grid-area v-divider
+
+  &.horizontal
+    cursor: ns-resize;
+    grid-area h-divider
 
 .flex-layout-tool-sidebar
   padding 8px
+  grid-area style
+
+.tree-modifier
+  display flex
