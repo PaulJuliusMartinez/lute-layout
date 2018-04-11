@@ -1,7 +1,7 @@
 {
   "extends": "tslint:recommended",
   "rules": {
-    "max-line-length": { "options": [100] },
+    "max-line-length": { "options": [90] },
     "curly": [true, "ignore-same-line"],
     "semicolon": ["never"],
     "indent": [true, "spaces", 2],

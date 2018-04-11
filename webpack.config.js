@@ -30,7 +30,7 @@ module.exports = {
   devServer: {
     contentBase: "./dist",
     hot: true,
-    port: 8080,
+    port: 8030,
   },
   plugins: [
     new webpack.NamedModulesPlugin(),
