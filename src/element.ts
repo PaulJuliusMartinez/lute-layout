@@ -1,4 +1,5 @@
 import * as Flex from "flex"
+import { NodeId } from "tree"
 
 export enum ElementType {
   Flex,
@@ -73,7 +74,7 @@ const DEFAULT_CHILD_SETTINGS = {
   childPadding: 16,
 }
 
-export function createElement(elementType: ElementType, logicalId: number): Element {
+export function createElement(elementType: ElementType, logicalId: NodeId): Element {
   switch (elementType) {
     case ElementType.Flex:
     case ElementType.InlineFlex: {

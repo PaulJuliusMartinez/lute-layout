@@ -1,26 +1,21 @@
 import { createElement, Element, ElementType } from "element"
 
-import {
-  ElementsAction,
-  ElementsActionType,
-} from "elements-actions"
+import { ElementsAction, ElementsActionType } from "elements-actions"
+import { Node, NodeId, ReverseVine, ROOT, Tree, Vine } from "tree"
 
 export interface ElementsState {
-  logicalChildren: { [logicalId: number]: number[] }
-  physicalChildren: { [physicalId: number]: number[] }
-
-  parents: { [logicalId: number]: number | undefined }
-
-  logicalElements: { [logicalId: number]: Element }
+  tree: Tree
+  elements: { [logicalId: string]: Element }
+  focusedElementVine: Vine
+  focusedElementReverseVine: ReverseVine
+  copiedElement?: NodeId
 }
 
 const defaultState: ElementsState = {
-  logicalChildren: { 0: [] },
-  physicalChildren: { 0: [] },
-
-  parents: { 0: undefined },
-
-  logicalElements: { 0: createElement(ElementType.Flex, 0) },
+  tree: { [ROOT]: [] },
+  elements: { [ROOT]: createElement(ElementType.Flex, ROOT) },
+  focusedElementVine: { logicalId: ROOT, physicalId: ROOT },
+  focusedElementReverseVine: { logicalId: ROOT, physicalId: ROOT },
 }
 
 export function elements(
@@ -28,31 +23,23 @@ export function elements(
   action: ElementsAction,
 ): ElementsState {
   switch (action.type) {
-    case ElementsActionType.RemoveElement:
-    case ElementsActionType.ReplaceWithChildren:
-    case ElementsActionType.RemoveChildren:
     case ElementsActionType.AddChildStart:
+      return addChild(state, /* start */ true)
     case ElementsActionType.AddChildEnd:
+      return addChild(state, /* start */ false)
     case ElementsActionType.AddSiblingBefore:
+      return addSibling(state, /* before */ true)
     case ElementsActionType.AddSiblingAfter:
-      return modifyTree(state, action)
+      return addSibling(state, /* before */ false)
     default:
       return state
   }
 }
 
-function modifyTree(state: ElementsState, action: ElementsAction) {
-  let { logicalId, physicalId } = action
+function addChild(state: ElementsState, start: boolean): ElementsState {
+  return state
+}
 
-  switch (action.type) {
-    case ElementsActionType.RemoveElement:
-    case ElementsActionType.ReplaceWithChildren:
-    case ElementsActionType.RemoveChildren:
-    case ElementsActionType.AddChildStart:
-    case ElementsActionType.AddChildEnd:
-    case ElementsActionType.AddSiblingBefore:
-    case ElementsActionType.AddSiblingAfter:
-    default:
-      return state
-  }
+function addSibling(state: ElementsState, before: boolean): ElementsState {
+  return state
 }
