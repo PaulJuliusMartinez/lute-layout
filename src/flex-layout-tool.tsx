@@ -1,5 +1,6 @@
 import * as React from "react"
 
+import DebugTreeState from "debug-tree-state"
 import ElementController from "element-controller"
 import FlexElement, { DEFAULT_COLOR, DEFAULT_WIDTH, FocusInfo } from "flex-element"
 import FlexLayoutDivider from "flex-layout-divider"
@@ -35,7 +36,7 @@ export default class FlexLayoutTool extends React.Component<{}, State> {
             parentFlex={false}
           />
            */}
-          <TreeElement />
+          <DebugTreeState />
         </div>
         <FlexLayoutDivider horizontal={true} />
         <TreeModifier />

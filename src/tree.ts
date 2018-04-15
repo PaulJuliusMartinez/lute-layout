@@ -44,7 +44,7 @@ export function reverseVine(vine: Vine): ReverseVine {
   let parent: Vine | undefined = vine
   while (parent) {
     child = { child, logicalId: parent.logicalId, physicalId: parent.physicalId }
-    parent = vine.parent
+    parent = parent.parent
   }
   return child!
 }
@@ -89,7 +89,7 @@ export function addChild(tree: Tree, vine: Vine, start: boolean): ModifyTreeResp
     newChildren.push(newNode)
   }
 
-  let newTree = { ...tree, [logicalId]: newChildren }
+  let newTree = { ...tree, [logicalId]: newChildren, [newNode.logicalId]: [] }
   let newVine = { ...newNode, parent: vine }
   return { tree: newTree, vine: newVine }
 }
@@ -111,7 +111,7 @@ export function addSibling(tree: Tree, vine: Vine, before: boolean): ModifyTreeR
     newChildren.splice(indexOfNode + 1, 0, newNode)
   }
 
-  let newTree = { ...tree, [parent.logicalId]: newChildren }
+  let newTree = { ...tree, [parent.logicalId]: newChildren, [newNode.logicalId]: [] }
   let newVine = { ...newNode, parent }
   return { tree: newTree, vine: newVine }
 }
@@ -269,7 +269,7 @@ export function moveLaterally(tree: Tree, vine: Vine, dest: number): Tree {
   } else if (dest === -1) {
     insertIndex = deleteIndex - 1
   } else if (dest === 1) {
-    insertIndex = deleteIndex
+    insertIndex = deleteIndex + 1
   } else {
     insertIndex = children.length
   }

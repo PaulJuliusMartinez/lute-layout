@@ -1,4 +1,9 @@
 import * as React from "react"
+import { connect } from "react-redux"
+
+import * as TreeActions from "elements-actions"
+import { Dispatch } from "store"
+import * as Tree from "tree"
 
 interface Props {
   // Add elements
@@ -28,11 +33,48 @@ interface Props {
   shallowDuplicate: () => void
   deepDuplicate: () => void
 
-  shallowDissociate: () => void
-  deepDissociate: () => void
+  dissociate: () => void
 
   copy: () => void
   paste: () => void
+
+  // Move focus
+  moveFocusUp: () => void
+  moveFocusDown: () => void
+  moveFocusLeft: () => void
+  moveFocusRight: () => void
+}
+
+function mapDispatchToProps(dispatch: Dispatch) {
+  return {
+    addChildStart: () => { dispatch(TreeActions.addChildStart()) },
+    addChildEnd: () => { dispatch(TreeActions.addChildEnd()) },
+    addSiblingBefore: () => { dispatch(TreeActions.addSiblingBefore()) },
+    addSiblingAfter: () => { dispatch(TreeActions.addSiblingAfter()) },
+    deleteElement: () => { dispatch(TreeActions.deleteNode()) },
+    removeChildren: () => { dispatch(TreeActions.removeChildren()) },
+    flatten: () => { dispatch(TreeActions.flatten()) },
+    wrap: () => { dispatch(TreeActions.wrap()) },
+
+    moveUp: () => { dispatch(TreeActions.moveUp()) },
+    moveDown: () => { dispatch(TreeActions.moveDown()) },
+    moveLeft: () => { dispatch(TreeActions.moveLeft()) },
+    moveRight: () => { dispatch(TreeActions.moveRight()) },
+    makeFirstChild: () => { dispatch(TreeActions.makeFirstChild()) },
+    makeLastChild: () => { dispatch(TreeActions.makeLastChild()) },
+
+    duplicate: () => { dispatch(TreeActions.duplicate()) },
+    shallowDuplicate: () => { dispatch(TreeActions.shallowDuplicate()) },
+    deepDuplicate: () => { dispatch(TreeActions.deepDuplicate()) },
+    dissociate: () => { dispatch(TreeActions.dissociate()) },
+    copy: () => { dispatch(TreeActions.copy()) },
+    paste: () => { dispatch(TreeActions.paste()) },
+
+    moveFocusUp: () => { dispatch(TreeActions.moveFocusUp()) },
+    moveFocusDown: () => { dispatch(TreeActions.moveFocusDown()) },
+    moveFocusLeft: () => { dispatch(TreeActions.moveFocusLeft()) },
+    moveFocusRight: () => { dispatch(TreeActions.moveFocusRight()) },
+  }
 }
 
 function formatButton(handleClick: () => void, text: string) {
@@ -77,14 +119,20 @@ const TreeModifier: React.SFC<Props> = props => {
       </div>
       <div>
         <h3>Dissociating Elements</h3>
-        {formatButton(props.shallowDissociate, "Shallow Dissociate")}
-        {formatButton(props.deepDissociate, "Deep Dissociate")}
+        {formatButton(props.dissociate, "Dissociate")}
         <h3>Copy/Paste Elements</h3>
         {formatButton(props.copy, "Copy")}
         {formatButton(props.paste, "Paste")}
+      </div>
+      <div>
+        <h3>Move Focus</h3>
+        {formatButton(props.moveFocusUp, "Move Focus Up")}
+        {formatButton(props.moveFocusDown, "Move Focus Down")}
+        {formatButton(props.moveFocusRight, "Move Focus Right")}
+        {formatButton(props.moveFocusLeft, "Move Focus Left")}
       </div>
     </div>
   )
 }
 
-export default TreeModifier
+export default connect(undefined, mapDispatchToProps)(TreeModifier)

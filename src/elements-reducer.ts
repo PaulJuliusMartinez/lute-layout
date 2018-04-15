@@ -25,6 +25,9 @@ export function elements(
   action: ElementsAction,
 ): ElementsState {
   switch (action.type) {
+    // Focusing nodes
+    case ElementsActionType.MoveFocus:
+      return moveFocus(state, action.direction)
     // Adding/Removing Nodes
     case ElementsActionType.AddChildStart:
       return addChild(state, /* start */ true)
@@ -68,6 +71,48 @@ export function elements(
     //   return dissociate(state)
     default:
       return state
+  }
+}
+
+function moveFocus(state: ElementsState, direction: Tree.Direction): ElementsState {
+  switch (direction) {
+    case Tree.Direction.Up: {
+      let focusedElementVine = state.focusedElementVine.parent
+      if (!focusedElementVine) return state
+      return {
+        ...state,
+        focusedElementVine,
+        focusedElementReverseVine: Tree.reverseVine(focusedElementVine),
+      }
+    }
+    case Tree.Direction.Down: {
+      let { tree, focusedElementVine } = state
+      let firstChild = tree[focusedElementVine.logicalId][0]
+      if (!firstChild) return state
+      let newFocusedElement = { ...firstChild, parent: focusedElementVine }
+      return {
+        ...state,
+        focusedElementVine: newFocusedElement,
+        focusedElementReverseVine: Tree.reverseVine(newFocusedElement),
+      }
+    }
+    case Tree.Direction.Left:
+    case Tree.Direction.Right: {
+      let offset = direction === Tree.Direction.Left ? -1 : 1
+      let { tree, focusedElementVine } = state
+      let { physicalId, parent } = focusedElementVine
+      if (!parent) return state
+      let siblings = tree[parent.logicalId]
+      let index = Tree.indexOfPhysicalNode(siblings, physicalId)
+      let newFocusedElement = siblings[index + offset]
+      if (!newFocusedElement) return state
+      let newFocusedVine = { ...newFocusedElement, parent }
+      return {
+        ...state,
+        focusedElementVine: newFocusedVine,
+        focusedElementReverseVine: Tree.reverseVine(newFocusedVine),
+      }
+    }
   }
 }
 
