@@ -7,7 +7,7 @@ export function nextId(): NodeId {
   return String(++id)
 }
 
-export function createNode(): Node | Vine | ReverseVine {
+export function createNode(): Node {
   let newId = nextId()
   return { logicalId: newId, physicalId: newId }
 }
@@ -43,11 +43,11 @@ export enum Direction {
   Right = "Right",
 }
 
-// Most operations that modify the tree will return a new tree and a node.
-// What the node refers to depends on the operation.
+// Most operations that modify the tree will return a new tree and a vine.
+// What the vine refers to depends on the operation.
 interface ModifyTreeResponse {
   tree: Tree
-  node: Node
+  vine: Vine
 }
 
 // Finds the index of a physical node in an array of nodes.
@@ -77,7 +77,8 @@ export function addChild(tree: Tree, vine: Vine, start: boolean): ModifyTreeResp
   }
 
   let newTree = { ...tree, [logicalId]: newChildren }
-  return { tree: newTree, node: newNode }
+  let newVine = { ...newNode, parent: vine }
+  return { tree: newTree, vine: newVine }
 }
 
 /**
@@ -98,7 +99,8 @@ export function addSibling(tree: Tree, vine: Vine, before: boolean): ModifyTreeR
   }
 
   let newTree = { ...tree, [parent.logicalId]: newChildren }
-  return { tree: newTree, node: newNode }
+  let newVine = { ...newNode, parent }
+  return { tree: newTree, vine: newVine }
 }
 
 /**
@@ -216,7 +218,8 @@ export function wrap(tree: Tree, vine: Vine): ModifyTreeResponse {
     [parent.logicalId]: newChildren,
     [newNode.logicalId]: [{ logicalId, physicalId }],
   }
-  return { tree: newTree, node: newNode }
+  let newVine = { ...newNode, parent }
+  return { tree: newTree, vine: newVine }
 }
 
 /**
@@ -287,7 +290,8 @@ function moveUp(tree: Tree, vine: Vine): ModifyTreeResponse {
     [parent.logicalId]: newParentChildren,
     [grandParent.logicalId]: newGrandParentChildren,
   }
-  return { tree: newTree, node: newNode }
+  let newVine = { ...newNode, parent: grandParent }
+  return { tree: newTree, vine: newVine }
 }
 
 /**
@@ -328,7 +332,8 @@ function moveDown(tree: Tree, vine: Vine): ModifyTreeResponse {
     [parent.logicalId]: newSiblings,
     [sibling.logicalId]: newNephews,
   }
-  return { tree: newTree, node: newNode }
+  let newVine = { ...newNode, parent: { ...sibling, parent } }
+  return { tree: newTree, vine: newVine }
 }
 
 /**
@@ -345,7 +350,8 @@ function duplicateNode(tree: Tree, vine: Vine): ModifyTreeResponse {
   newChildren.splice(indexOfNode + 1, 0, newNode)
 
   let newTree = { ...tree, [parent.logicalId]: newChildren }
-  return { tree: newTree, node: newNode }
+  let newVine = { ...newNode, parent }
+  return { tree: newTree, vine: newVine }
 }
 
 /**
@@ -367,7 +373,8 @@ function shallowDuplicate(tree: Tree, vine: Vine): ModifyTreeResponse {
     [parent.logicalId]: newChildren,
     [newNode.logicalId]: tree[logicalId].slice(),
   }
-  return { tree: newTree, node: newNode }
+  let newVine = { ...newNode, parent }
+  return { tree: newTree, vine: newVine }
 }
 
 /**
@@ -379,7 +386,7 @@ function shallowDuplicate(tree: Tree, vine: Vine): ModifyTreeResponse {
 function deepDuplicate(
   tree: Tree,
   vine: Vine,
-): { tree: Tree; node: Node; mapping: { [index: string]: NodeId } } {
+): { tree: Tree; vine: Vine; mapping: { [index: string]: NodeId } } {
   let { logicalId, physicalId, parent } = vine
   if (!parent) throw new TreeModificationError("Cannot duplicate root node.")
 
@@ -396,8 +403,9 @@ function deepDuplicate(
     ...subTree,
     [parent.logicalId]: newChildren,
   }
+  let newVine = { ...newNode, parent }
 
-  return { mapping, tree: newTree, node: newNode }
+  return { mapping, tree: newTree, vine: newVine }
 }
 
 /**
