@@ -36,6 +36,19 @@ export interface ReverseVine {
   child?: ReverseVine
 }
 
+/**
+ * Reverses a vine, returning a ReverseVine.
+ */
+export function reverseVine(vine: Vine): ReverseVine {
+  let child: ReverseVine | undefined
+  let parent: Vine | undefined = vine
+  while (parent) {
+    child = { child, logicalId: parent.logicalId, physicalId: parent.physicalId }
+    parent = vine.parent
+  }
+  return child!
+}
+
 export enum Direction {
   Up = "Up",
   Down = "Down",
@@ -51,7 +64,7 @@ interface ModifyTreeResponse {
 }
 
 // Finds the index of a physical node in an array of nodes.
-function indexOfPhysicalNode(nodes: Node[], physicalId: NodeId) {
+export function indexOfPhysicalNode(nodes: Node[], physicalId: NodeId) {
   for (let i = 0; i < nodes.length; i++) {
     if (nodes[i].physicalId === physicalId) return i
   }
@@ -160,7 +173,7 @@ export function removeChildren(
 }
 
 /**
- * Removes a node and replaces it with its children.  Returns a new updated
+ * Removes a node and replaces it with its children. Returns a new updated
  * tree, and whether or not the node has been entirely removed from the tree. If
  * the caller already knows that they have another reference to this node they
  * can pass that information in to avoid extra computation.
@@ -172,6 +185,10 @@ export function flatten(
 ): { tree: Tree; stillReferenced: boolean } {
   let { logicalId, physicalId, parent } = vine
   if (!parent) throw new TreeModificationError("Cannot flatten the root node.")
+  if (tree[logicalId].length === 0) {
+    throw new TreeModificationError("Cannot flatten node without any children.")
+  }
+
   let newParentChildren = tree[parent.logicalId].slice()
   let indexOfNode = indexOfPhysicalNode(newParentChildren, physicalId)
 
@@ -196,6 +213,10 @@ export function flatten(
         }
       }
     }
+  }
+
+  if (!stillReferenced) {
+    delete newTree[logicalId]
   }
 
   return { stillReferenced, tree: newTree }
@@ -228,7 +249,7 @@ export function wrap(tree: Tree, vine: Vine): ModifyTreeResponse {
  * the first child and +Infinity to make it the last child. Returns a new
  * updated tree, or the same tree if the node didn't actually move.
  */
-function moveLaterally(tree: Tree, vine: Vine, dest: number): Tree {
+export function moveLaterally(tree: Tree, vine: Vine, dest: number): Tree {
   let { logicalId, physicalId, parent } = vine
   if (!parent) throw new TreeModificationError("Cannot move the root node.")
   if (![-Infinity, -1, 1, Infinity].includes(dest)) {
@@ -264,7 +285,7 @@ function moveLaterally(tree: Tree, vine: Vine, dest: number): Tree {
  * Moves a node up in the tree, making it the right sibling of its parent.
  * Returns a new updated tree and the new node.
  */
-function moveUp(tree: Tree, vine: Vine): ModifyTreeResponse {
+export function moveUp(tree: Tree, vine: Vine): ModifyTreeResponse {
   let { logicalId, physicalId, parent } = vine
   if (!parent) throw new TreeModificationError("Cannot move the root node.")
   let {
@@ -300,7 +321,7 @@ function moveUp(tree: Tree, vine: Vine): ModifyTreeResponse {
  * sibling. Throws if it has no siblings. Returns a new updated tree and the new
  * node.
  */
-function moveDown(tree: Tree, vine: Vine): ModifyTreeResponse {
+export function moveDown(tree: Tree, vine: Vine): ModifyTreeResponse {
   let { logicalId, physicalId, parent } = vine
   if (!parent) throw new TreeModificationError("Cannot move the root node.")
 
@@ -340,7 +361,7 @@ function moveDown(tree: Tree, vine: Vine): ModifyTreeResponse {
  * Duplicates a node and adds the duplicated node as the next sibling of
  * original node. Returns a new updated tree and the new node.
  */
-function duplicateNode(tree: Tree, vine: Vine): ModifyTreeResponse {
+export function duplicateNode(tree: Tree, vine: Vine): ModifyTreeResponse {
   let { logicalId, physicalId, parent } = vine
   if (!parent) throw new TreeModificationError("Cannot duplicate root node.")
   let newPhysicalId = nextId()
@@ -360,7 +381,7 @@ function duplicateNode(tree: Tree, vine: Vine): ModifyTreeResponse {
  * are linked to the children of the original node. Returns a new updated tree
  * and the new node.
  */
-function shallowDuplicate(tree: Tree, vine: Vine): ModifyTreeResponse {
+export function shallowDuplicate(tree: Tree, vine: Vine): ModifyTreeResponse {
   let { logicalId, physicalId, parent } = vine
   if (!parent) throw new TreeModificationError("Cannot duplicate root node.")
   let newNode = createNode()
@@ -383,7 +404,7 @@ function shallowDuplicate(tree: Tree, vine: Vine): ModifyTreeResponse {
  * of its descendents. Returns the new updated a tree, the new node, and a map
  * from logical ids to dulpicated logical ids.
  */
-function deepDuplicate(
+export function deepDuplicate(
   tree: Tree,
   vine: Vine,
 ): { tree: Tree; vine: Vine; mapping: { [index: string]: NodeId } } {
@@ -454,12 +475,12 @@ function duplicateSubTree(
  * references they have into the tree. Returns the new tree, a new reverseVine
  * to the node and a Set of logical ids of nodes that are no longer accessible.
  */
-function dissociate(
+export function dissociate(
   tree: Tree,
-  reverseVine: ReverseVine,
+  rVine: ReverseVine,
   extraReferences: NodeId[],
-): { tree: Tree; reverseVine: ReverseVine; removedIds: Set<NodeId> } {
-  if (!reverseVine.child) {
+): { tree: Tree; rVine: ReverseVine; removedIds: Set<NodeId> } {
+  if (!rVine.child) {
     throw new TreeModificationError("Can't dissociate the root node.")
   }
 
@@ -469,8 +490,8 @@ function dissociate(
     physicalId: ROOT,
     child: undefined,
   }
-  while (reverseVine.child) {
-    let { logicalId, physicalId, child } = reverseVine
+  while (rVine.child) {
+    let { logicalId, physicalId, child } = rVine
     let newNode: Node = createNode()
 
     let newChildren = tree[logicalId].slice()
@@ -479,25 +500,22 @@ function dissociate(
     newTree[logicalId] = newChildren
     newTree[newNode.logicalId] = tree[child.logicalId]
 
-    reverseVine = { ...newNode, child: child.child }
+    rVine = { ...newNode, child: child.child }
 
-    // Build up new reverseVine
+    // Build up new rVine
     newReverseVine.child = { ...newNode }
     newReverseVine = newReverseVine.child
   }
 
   // Now we have to remove an inaccessible nodes in case we replaced more than
   // we needed to.
-  let inaccessibleNodes = calculateInaccessibleNodes(newTree, [
-    ROOT,
-    ...extraReferences,
-  ])
+  let inaccessibleNodes = calculateInaccessibleNodes(newTree, [ROOT, ...extraReferences])
 
   for (let inaccessibleNode of inaccessibleNodes) {
     delete newTree[inaccessibleNode]
   }
 
-  return { reverseVine, tree: newTree, removedIds: inaccessibleNodes }
+  return { rVine, tree: newTree, removedIds: inaccessibleNodes }
 }
 
 /**
