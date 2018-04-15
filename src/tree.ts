@@ -7,7 +7,7 @@ export function nextId(): NodeId {
   return String(++id)
 }
 
-export function createNode(): Node {
+export function createNode(): Node | Vine | ReverseVine {
   let newId = nextId()
   return { logicalId: newId, physicalId: newId }
 }
@@ -373,16 +373,124 @@ function shallowDuplicate(tree: Tree, vine: Vine): ModifyTreeResponse {
 /**
  * Performs a deep duplication of a node and adds it as the next sibling of the
  * duplicated node. The new node is not linked to the previous one, nor are any
- * of its descendents. Returns the new updated a tree and the new node.
+ * of its descendents. Returns the new updated a tree, the new node, and a map
+ * from logical ids to dulpicated logical ids.
  */
-function deepDuplicate(tree: Tree, vine: Vine): ModifyTreeResponse {
-  // TODO: implement this.
-  return { tree, node: vine }
+function deepDuplicate(
+  tree: Tree,
+  vine: Vine,
+): { tree: Tree; node: Node; mapping: { [index: string]: NodeId } } {
+  let { logicalId, physicalId, parent } = vine
+  if (!parent) throw new TreeModificationError("Cannot duplicate root node.")
+
+  let { mapping, subTree, rootId } = duplicateSubTree(tree, vine.logicalId)
+
+  let newPhysicalId = nextId()
+  let newNode = { logicalId: rootId, physicalId: newPhysicalId }
+  let newChildren = tree[parent.logicalId].slice()
+  let indexOfNode = indexOfPhysicalNode(newChildren, physicalId)
+  newChildren.splice(indexOfNode + 1, 0, newNode)
+
+  let newTree = {
+    ...tree,
+    ...subTree,
+    [parent.logicalId]: newChildren,
+  }
+
+  return { mapping, tree: newTree, node: newNode }
 }
 
-// TODO: shallowDissociate
-// TODO: deepDissociate
-// TODO: paste
+/**
+ * Duplicates a subtree by generating new logical ids (and physical ids) for every
+ * element in the subtree. Returns the new tree with the new node and mappings
+ * from original logicalIds of nodes to the new logicalIds.
+ */
+function duplicateSubTree(
+  tree: Tree,
+  root: NodeId,
+): { subTree: Tree; rootId: NodeId; mapping: { [index: string]: NodeId } } {
+  let mapping: { [index: string]: NodeId } = {}
+  let idsToProcess = [root]
+
+  // Find all nodes we need to duplicate and generate a new logical id for each.
+  while (idsToProcess.length > 0) {
+    let idToProcess = idsToProcess.pop()!
+    for (let child of tree[idToProcess]) {
+      let { logicalId } = child
+      if (!(logicalId in mapping)) {
+        idsToProcess.push(logicalId)
+        mapping[logicalId] = nextId()
+      }
+    }
+  }
+
+  let subTree: Tree = {}
+  Object.entries(mapping).forEach(entry => {
+    let [originalId, newId] = entry
+    let newChildren = tree[originalId].map(node => ({
+      logicalId: mapping[node.logicalId],
+      physicalId: nextId(),
+    }))
+    subTree[newId] = newChildren
+  })
+
+  return { mapping, subTree, rootId: mapping[root] }
+}
+
+/**
+ * Dissociates a node from any duplicates that exist in the tree, guaranteeing
+ * that any any edits only affect the given node. This method replaces the
+ * entire vine, even if technically the last node needs to be replaced. Because
+ * of this, some nodes may be no longer accessible. To accurately calculate the
+ * set of inaccessible nodes the caller must pass in an array of any extra
+ * references they have into the tree. Returns the new tree, a new reverseVine
+ * to the node and a Set of logical ids of nodes that are no longer accessible.
+ */
+function dissociate(
+  tree: Tree,
+  reverseVine: ReverseVine,
+  extraReferences: NodeId[],
+): { tree: Tree; reverseVine: ReverseVine; removedIds: Set<NodeId> } {
+  if (!reverseVine.child) {
+    throw new TreeModificationError("Can't dissociate the root node.")
+  }
+
+  let newTree = { ...tree }
+  let newReverseVine: ReverseVine = {
+    logicalId: ROOT,
+    physicalId: ROOT,
+    child: undefined,
+  }
+  while (reverseVine.child) {
+    let { logicalId, physicalId, child } = reverseVine
+    let newNode: Node = createNode()
+
+    let newChildren = tree[logicalId].slice()
+    let indexOfNode = indexOfPhysicalNode(newChildren, child.physicalId)
+    newChildren[indexOfNode] = newNode
+    newTree[logicalId] = newChildren
+    newTree[newNode.logicalId] = tree[child.logicalId]
+
+    reverseVine = { ...newNode, child: child.child }
+
+    // Build up new reverseVine
+    newReverseVine.child = { ...newNode }
+    newReverseVine = newReverseVine.child
+  }
+
+  // Now we have to remove an inaccessible nodes in case we replaced more than
+  // we needed to.
+  let inaccessibleNodes = calculateInaccessibleNodes(newTree, [
+    ROOT,
+    ...extraReferences,
+  ])
+
+  for (let inaccessibleNode of inaccessibleNodes) {
+    delete newTree[inaccessibleNode]
+  }
+
+  return { reverseVine, tree: newTree, removedIds: inaccessibleNodes }
+}
 
 /**
  * Calculates which nodes are inaccessible in a given tree given an array of

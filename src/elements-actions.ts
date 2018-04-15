@@ -63,8 +63,7 @@ export enum ElementsActionType {
   ShallowDuplicate,
   DeepDuplicate,
 
-  ShallowDissociate,
-  DeepDissociate,
+  Dissociate,
 
   Copy,
   Paste,
@@ -85,8 +84,7 @@ interface ModifyTreeAction {
     | ElementsActionType.Duplicate
     | ElementsActionType.ShallowDuplicate
     | ElementsActionType.DeepDuplicate
-    | ElementsActionType.ShallowDissociate
-    | ElementsActionType.DeepDissociate
+    | ElementsActionType.Dissociate
     | ElementsActionType.Copy
     | ElementsActionType.Paste
 }
