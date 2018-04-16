@@ -138,7 +138,7 @@ function deleteNode(state: ElementsState): ElementsState {
   )
   let focusedElementVine = state.focusedElementVine.parent!
   let focusedElementReverseVine = Tree.reverseVine(focusedElementVine)
-  let newElements: ElementMap = { ...elements }
+  let newElements: ElementMap = { ...state.elements }
   removedIds.forEach(removedId => delete newElements[removedId])
   return {
     ...state,
@@ -155,7 +155,7 @@ function removeChildren(state: ElementsState): ElementsState {
     state.focusedElementVine,
     references(state),
   )
-  let newElements: ElementMap = { ...elements }
+  let newElements: ElementMap = { ...state.elements }
   removedIds.forEach(removedId => delete newElements[removedId])
   return { ...state, tree, elements: newElements }
 }
@@ -172,7 +172,7 @@ function flatten(state: ElementsState): ElementsState {
   )
   let newElements = state.elements
   if (!stillReferenced) {
-    newElements = { ...elements }
+    newElements = { ...newElements }
     delete newElements[logicalId]
   }
 

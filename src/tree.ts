@@ -143,7 +143,7 @@ export function deleteNode(
     delete newTree[inaccessibleNode]
   }
 
-  return { tree, removedIds: inaccessibleNodes }
+  return { tree: newTree, removedIds: inaccessibleNodes }
 }
 
 /**
@@ -169,7 +169,7 @@ export function removeChildren(
     delete newTree[inaccessibleNode]
   }
 
-  return { tree, removedIds: inaccessibleNodes }
+  return { tree: newTree, removedIds: inaccessibleNodes }
 }
 
 /**
@@ -339,7 +339,8 @@ export function moveDown(tree: Tree, vine: Vine): ModifyTreeResponse {
     throw new TreeModificationError("Cannot move node into copy of itself.")
   }
 
-  let newSiblings = siblings.slice().splice(indexOfNode, 1)
+  let newSiblings = siblings.slice()
+  newSiblings.splice(indexOfNode, 1)
   let newNephews = tree[sibling.logicalId].slice()
 
   if (firstChild) {

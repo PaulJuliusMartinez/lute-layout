@@ -34,7 +34,7 @@ function subTreeToString(
       focusPath &&
       focusPath.child &&
       focusPath.child.logicalId === child.logicalId &&
-      focusPath.child.logicalId === child.physicalId
+      focusPath.child.physicalId === child.physicalId
     ) {
       str += subTreeToString(es, child, depth + 1, focusPath.child)
     } else {
