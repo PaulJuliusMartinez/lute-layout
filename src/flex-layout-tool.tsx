@@ -36,7 +36,7 @@ export default class FlexLayoutTool extends React.Component<{}, State> {
             parentFlex={false}
           />
            */}
-          <DebugTreeState />
+          <TreeElement logicalId="0" />
         </div>
         <FlexLayoutDivider horizontal={true} />
         <TreeModifier />
