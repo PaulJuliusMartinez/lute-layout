@@ -4,6 +4,7 @@ import { connect } from "react-redux"
 import { ElementsState } from "elements-reducer"
 import { Store } from "store"
 import * as Tree from "tree"
+import * as Vine from "data-structures/vine"
 
 function debug(es: ElementsState): string {
   return (
@@ -12,7 +13,7 @@ function debug(es: ElementsState): string {
       es,
       { logicalId: "0", physicalId: "0" },
       0,
-      es.focusedElementReverseVine,
+      es.focusedLeaf,
     )
   )
 }
@@ -21,22 +22,22 @@ function subTreeToString(
   es: ElementsState,
   node: Tree.Node,
   depth: number,
-  focusPath: Tree.ReverseVine | undefined,
+  focusVine: Tree.NodeRef | undefined,
 ): string {
   let str = new Array(depth).fill("  ").join("")
-  let focused = focusPath && !focusPath.child
+  let focused = focusVine && !focusVine.child
   str += `[${node.logicalId}, ${node.physicalId}]`
   if (focused) str += " (focused)"
   str += "\n"
   let children = es.tree[node.logicalId]
   children.forEach(child => {
     if (
-      focusPath &&
-      focusPath.child &&
-      focusPath.child.logicalId === child.logicalId &&
-      focusPath.child.physicalId === child.physicalId
+      focusVine &&
+      focusVine.child &&
+      focusVine.child.logicalId === child.logicalId &&
+      focusVine.child.physicalId === child.physicalId
     ) {
-      str += subTreeToString(es, child, depth + 1, focusPath.child)
+      str += subTreeToString(es, child, depth + 1, focusVine.child)
     } else {
       str += subTreeToString(es, child, depth + 1, undefined)
     }

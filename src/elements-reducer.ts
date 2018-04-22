@@ -9,7 +9,7 @@ type ElementMap = { [logicalId: string]: Element }
 export interface ElementsState {
   tree: Tree.Tree
   elements: ElementMap
-  focusedLeaf: Vine.MutElem<Tree.Node>
+  focusedLeaf: Tree.NodeRef
   copiedElementId?: Tree.NodeId
 }
 

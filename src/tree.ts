@@ -23,7 +23,7 @@ export interface Tree {
   [logicalId: string]: Node[]
 }
 
-type NodeRef = Vine.ImutElem<Node>
+export type NodeRef = Vine.ImutElem<Node>
 
 export enum Direction {
   Up = "Up",
@@ -386,7 +386,7 @@ export function shallowDuplicate(tree: Tree, ref: NodeRef): TreeAndNode {
 export function deepDuplicate(
   tree: Tree,
   ref: NodeRef,
-): { tree: Tree; ref: NodeRef; mapping: { [index: string]: NodeId } } {
+): { tree: Tree; node: Node; mapping: { [index: string]: NodeId } } {
   let { logicalId, physicalId, parent } = ref
   if (!parent) throw new ModificationError("Cannot duplicate root node.")
 

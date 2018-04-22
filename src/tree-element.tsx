@@ -4,6 +4,7 @@ import { connect } from "react-redux"
 import { ContentElement, Element } from "element"
 import { Store } from "store"
 import * as Tree from "tree"
+import * as Vine from "data-structures/vine"
 
 const STYLES: React.CSSProperties = {
   margin: "16px",
@@ -15,13 +16,13 @@ const STYLES: React.CSSProperties = {
 
 interface OwnProps {
   logicalId: string
-  focusPath: Tree.ReverseVine | undefined
+  focusVine: Tree.NodeRef | undefined
 }
 
 interface ConnectProps {
   element: Element
   children: Tree.Node[]
-  focusPath: Tree.ReverseVine | undefined
+  focusVine: Tree.NodeRef | undefined
 }
 
 type Props = OwnProps & ConnectProps
@@ -29,13 +30,13 @@ type Props = OwnProps & ConnectProps
 function mapStateToProps(store: Store, ownProps: OwnProps): ConnectProps {
   let { elements } = store
   let children = elements.tree[ownProps.logicalId]
-  let { focusPath } = ownProps
+  let { focusVine } = ownProps
   if (ownProps.logicalId === Tree.ROOT) {
-    focusPath = elements.focusedElementReverseVine
+    focusVine = Vine.root(elements.focusedLeaf)
   }
   return {
     children,
-    focusPath,
+    focusVine,
     element: elements.elements[ownProps.logicalId],
   }
 }
@@ -44,32 +45,32 @@ interface State {}
 
 class TreeElement extends React.Component<Props, State> {
   formatChildren() {
-    let { children, focusPath } = this.props
+    let { children, focusVine } = this.props
     return children.map(child => {
-      let childFocusPath: Tree.ReverseVine | undefined
-      if (focusPath && focusPath.child) {
-        let { logicalId, physicalId } = focusPath.child
+      let childFocusPath: Tree.NodeRef | undefined
+      if (focusVine && focusVine.child) {
+        let { logicalId, physicalId } = focusVine.child
         if (child.logicalId === logicalId && child.physicalId === physicalId) {
-          childFocusPath = focusPath.child
+          childFocusPath = focusVine.child
         }
       }
       return (
         <TreeElementContainer
           key={child.physicalId}
           logicalId={child.logicalId}
-          focusPath={childFocusPath}
+          focusVine={childFocusPath}
         />
       )
     })
   }
 
   render() {
-    let { element, children, focusPath } = this.props
+    let { element, children, focusVine } = this.props
     let content =
       children.length === 0 ? (element as ContentElement).content : this.formatChildren()
 
-    let onFocusPath = Boolean(focusPath)
-    let focused = focusPath && !focusPath.child
+    let onFocusPath = Boolean(focusVine)
+    let focused = focusVine && !focusVine.child
 
     let styles = Object.assign({}, STYLES)
     if (onFocusPath) styles.borderColor = "#00f"

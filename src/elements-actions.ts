@@ -1,5 +1,5 @@
 import { ElementType } from "element"
-import { Direction, Vine } from "tree"
+import { Direction, NodeRef } from "tree"
 
 export enum ElementsActionType {
   // Navigating Tree
@@ -96,7 +96,7 @@ interface MoveNodeAction {
 
 interface FocusElementAction {
   type: ElementsActionType.FocusElement
-  element: Vine
+  element: NodeRef
 }
 
 interface MoveFocusAction {
