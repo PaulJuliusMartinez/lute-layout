@@ -2,22 +2,22 @@ import { createElement, Element, ElementType } from "element"
 
 import { ElementsAction, ElementsActionType } from "elements-actions"
 import * as Tree from "tree"
+import * as Vine from "data-structures/vine"
 
 type ElementMap = { [logicalId: string]: Element }
 
 export interface ElementsState {
   tree: Tree.Tree
   elements: ElementMap
-  focusedElementVine: Tree.Vine
-  focusedElementReverseVine: Tree.ReverseVine
+  focusedLeaf: Vine.MutElem<Tree.Node>
   copiedElementId?: Tree.NodeId
 }
 
+const ROOT_NODE = { logicalId: Tree.ROOT, physicalId: Tree.ROOT }
 const defaultState: ElementsState = {
   tree: { [Tree.ROOT]: [] },
   elements: { [Tree.ROOT]: createElement(ElementType.Flex, Tree.ROOT) },
-  focusedElementVine: { logicalId: Tree.ROOT, physicalId: Tree.ROOT },
-  focusedElementReverseVine: { logicalId: Tree.ROOT, physicalId: Tree.ROOT },
+  focusedLeaf: ROOT_NODE,
 }
 
 export function elements(
@@ -77,82 +77,72 @@ export function elements(
 function moveFocus(state: ElementsState, direction: Tree.Direction): ElementsState {
   switch (direction) {
     case Tree.Direction.Up: {
-      let focusedElementVine = state.focusedElementVine.parent
-      if (!focusedElementVine) return state
-      return {
-        ...state,
-        focusedElementVine,
-        focusedElementReverseVine: Tree.reverseVine(focusedElementVine),
-      }
+      let { focusedLeaf } = state
+      if (!focusedLeaf.parent) return state
+      return { ...state, focusedLeaf: Vine.cutLeaves(focusedLeaf.parent) }
     }
     case Tree.Direction.Down: {
-      let { tree, focusedElementVine } = state
-      let firstChild = tree[focusedElementVine.logicalId][0]
+      let { tree, focusedLeaf } = state
+      let firstChild = tree[focusedLeaf.logicalId][0]
       if (!firstChild) return state
-      let newFocusedElement = { ...firstChild, parent: focusedElementVine }
-      return {
-        ...state,
-        focusedElementVine: newFocusedElement,
-        focusedElementReverseVine: Tree.reverseVine(newFocusedElement),
-      }
+      let newLeaf = { ...firstChild }
+      let newFocusedLeaf = Vine.replaceLeaves(focusedLeaf, newLeaf)
+      return { ...state, focusedLeaf: newFocusedLeaf }
     }
     case Tree.Direction.Left:
     case Tree.Direction.Right: {
       let offset = direction === Tree.Direction.Left ? -1 : 1
-      let { tree, focusedElementVine } = state
-      let { physicalId, parent } = focusedElementVine
+      let { tree, focusedLeaf } = state
+      let { physicalId, parent } = focusedLeaf
       if (!parent) return state
+
       let siblings = tree[parent.logicalId]
       let index = Tree.indexOfPhysicalNode(siblings, physicalId)
       let newFocusedElement = siblings[index + offset]
       if (!newFocusedElement) return state
-      let newFocusedVine = { ...newFocusedElement, parent }
-      return {
-        ...state,
-        focusedElementVine: newFocusedVine,
-        focusedElementReverseVine: Tree.reverseVine(newFocusedVine),
-      }
+
+      let newFocusedLeaf = Vine.replaceLeaves(parent, { ...newFocusedElement })
+      return { ...state, focusedLeaf: newFocusedLeaf }
     }
   }
 }
 
 function addChild(state: ElementsState, start: boolean): ElementsState {
-  let { tree, vine } = Tree.addChild(state.tree, state.focusedElementVine, start)
-  let newElement = createElement(ElementType.Content, vine.logicalId)
-  let newElements = { ...state.elements, [vine.logicalId]: newElement }
+  let { tree, node } = Tree.addChild(state.tree, state.focusedLeaf, start)
+  let newElement = createElement(ElementType.Content, node.logicalId)
+  let newElements = { ...state.elements, [node.logicalId]: newElement }
   return { ...state, tree, elements: newElements }
 }
 
 function addSibling(state: ElementsState, before: boolean): ElementsState {
-  let { tree, vine } = Tree.addSibling(state.tree, state.focusedElementVine, before)
-  let newElement = createElement(ElementType.Content, vine.logicalId)
-  let newElements = { ...state.elements, [vine.logicalId]: newElement }
+  let { tree, node } = Tree.addSibling(state.tree, state.focusedLeaf, before)
+  let newElement = createElement(ElementType.Content, node.logicalId)
+  let newElements = { ...state.elements, [node.logicalId]: newElement }
   return { ...state, tree, elements: newElements }
 }
 
 function deleteNode(state: ElementsState): ElementsState {
   let { tree, removedIds } = Tree.deleteNode(
     state.tree,
-    state.focusedElementVine,
+    state.focusedLeaf,
     references(state),
   )
-  let focusedElementVine = state.focusedElementVine.parent!
-  let focusedElementReverseVine = Tree.reverseVine(focusedElementVine)
+  let newFocusedLeaf = Vine.cutLeaves(state.focusedLeaf.parent!)
+
   let newElements: ElementMap = { ...state.elements }
   removedIds.forEach(removedId => delete newElements[removedId])
   return {
     ...state,
     tree,
-    focusedElementVine,
-    focusedElementReverseVine,
     elements: newElements,
+    focusedLeaf: newFocusedLeaf,
   }
 }
 
 function removeChildren(state: ElementsState): ElementsState {
   let { tree, removedIds } = Tree.removeChildren(
     state.tree,
-    state.focusedElementVine,
+    state.focusedLeaf,
     references(state),
   )
   let newElements: ElementMap = { ...state.elements }
@@ -161,13 +151,13 @@ function removeChildren(state: ElementsState): ElementsState {
 }
 
 function flatten(state: ElementsState): ElementsState {
-  let { tree: originalTree, focusedElementVine, copiedElementId } = state
-  let { logicalId, physicalId, parent } = focusedElementVine
+  let { tree: originalTree, focusedLeaf, copiedElementId } = state
+  let { logicalId, physicalId, parent } = focusedLeaf
 
   let haveOtherReference = copiedElementId === logicalId
   let { tree, stillReferenced } = Tree.flatten(
     originalTree,
-    state.focusedElementVine,
+    state.focusedLeaf,
     haveOtherReference,
   )
   let newElements = state.elements
@@ -183,52 +173,32 @@ function flatten(state: ElementsState): ElementsState {
     physicalId,
   )
   let firstChild = tree[parent!.logicalId][originalIndex]
-  let newFocusedElementVine = { ...firstChild, parent }
+  let newFocusedLeaf = Vine.replaceLeaves(parent!, { ...firstChild })
 
-  return {
-    ...state,
-    tree,
-    focusedElementVine: newFocusedElementVine,
-    focusedElementReverseVine: Tree.reverseVine(newFocusedElementVine),
-  }
+  return { ...state, tree, focusedLeaf: newFocusedLeaf }
 }
 
 function wrap(state: ElementsState): ElementsState {
-  let { tree, vine } = Tree.wrap(state.tree, state.focusedElementVine)
-  let newElement = createElement(ElementType.Content, vine.logicalId)
-  let newElements = { ...state.elements, [vine.logicalId]: newElement }
-  return {
-    ...state,
-    tree,
-    elements: newElements,
-    focusedElementVine: vine,
-    focusedElementReverseVine: Tree.reverseVine(vine),
-  }
+  let { tree, node } = Tree.wrap(state.tree, state.focusedLeaf)
+  let newElement = createElement(ElementType.Content, node.logicalId)
+  let newElements = { ...state.elements, [node.logicalId]: newElement }
+  let newFocusedLeaf = Vine.replaceLeaves(state.focusedLeaf.parent!, { ...node })
+  return { ...state, tree, elements: newElements, focusedLeaf: newFocusedLeaf }
 }
 
 function moveLaterally(state: ElementsState, dest: number): ElementsState {
-  let tree = Tree.moveLaterally(state.tree, state.focusedElementVine, dest)
+  let tree = Tree.moveLaterally(state.tree, state.focusedLeaf, dest)
   return { ...state, tree }
 }
 
 function moveUp(state: ElementsState): ElementsState {
-  let { tree, vine } = Tree.moveUp(state.tree, state.focusedElementVine)
-  return {
-    ...state,
-    tree,
-    focusedElementVine: vine,
-    focusedElementReverseVine: Tree.reverseVine(vine),
-  }
+  let { tree, vine: focusedLeaf } = Tree.moveUp(state.tree, state.focusedLeaf)
+  return { ...state, tree, focusedLeaf }
 }
 
 function moveDown(state: ElementsState): ElementsState {
-  let { tree, vine } = Tree.moveDown(state.tree, state.focusedElementVine)
-  return {
-    ...state,
-    tree,
-    focusedElementVine: vine,
-    focusedElementReverseVine: Tree.reverseVine(vine),
-  }
+  let { tree, vine: focusedLeaf } = Tree.moveDown(state.tree, state.focusedLeaf)
+  return { ...state, tree, focusedLeaf }
 }
 
 // Returns an array of references into the tree.

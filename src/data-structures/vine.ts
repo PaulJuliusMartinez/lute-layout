@@ -1,13 +1,3 @@
-export interface Mut<T> {
-  root: MutElem<T>
-  leaf: MutElem<T>
-}
-
-export interface Imut<T> {
-  readonly root: ImutElem<T>
-  readonly leaf: ImutElem<T>
-}
-
 export type MutElem<T> = T & {
   parent?: MutElem<T> | undefined
   child?: MutElem<T> | undefined
@@ -38,13 +28,6 @@ export function leaf<T>(elem: Elem<T>): Elem<T> {
     elem = elem.child
   }
   return elem
-}
-
-/**
- * Given a elem in a vine, returns references to the root and leaf.
- */
-export function fromElem<T>(elem: Elem<T>): Mut<T> | Imut<T> {
-  return { root: root(elem), leaf: leaf(elem) }
 }
 
 /**
@@ -86,7 +69,7 @@ export function join<T>(leaves: MutElem<T>, roots: MutElem<T>): MutElem<T> {
 
 /**
  * Replaces the leaves of an immutable vine with a mutable T. Returns a
- * reference to the same elem in the new vine.
+ * reference to the leaf of the new vine.
  */
 export function replaceLeaves<T>(
   elem: ImutElem<T>,
@@ -108,7 +91,7 @@ export function replaceLeaves<T>(
     newLeaf.parent = newElem
   }
 
-  return newElem
+  return leaf(newElem)
 }
 
 /**
