@@ -13,7 +13,21 @@
     "arrow-parens": [true, "ban-single-arg-parens"],
     "no-namespace": false,
     "member-ordering": false,
-    "interface-over-type-literal": false
+    "interface-over-type-literal": false,
+    "trailing-comma": [
+      true,
+      {
+        "singleline": "never",
+        "multiline": {
+          "objects": "always",
+          "arrays": "always",
+          "functions": "always",
+          "typeLiterals": "never",
+          "imports": "always",
+          "exports": "always"
+        },
+        "esSpecCompliant": true
+      }
   },
   "jsRules": {
     "max-line-length": {
