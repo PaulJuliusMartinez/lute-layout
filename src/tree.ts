@@ -1,3 +1,5 @@
+import * as Vine from "data-structures/vine"
+
 export type NodeId = string
 
 export const ROOT: NodeId = "0"
@@ -21,33 +23,7 @@ export interface Tree {
   [logicalId: string]: Node[]
 }
 
-// An element and references to all its parents as a linked list.
-export interface Vine {
-  logicalId: NodeId
-  physicalId: NodeId
-  parent?: Vine
-}
-
-// A reference to a specific element starting from the root node, represented
-// as a linked list. (A vine, but in the opposite direction.)
-export interface ReverseVine {
-  logicalId: NodeId
-  physicalId: NodeId
-  child?: ReverseVine
-}
-
-/**
- * Reverses a vine, returning a ReverseVine.
- */
-export function reverseVine(vine: Vine): ReverseVine {
-  let child: ReverseVine | undefined
-  let parent: Vine | undefined = vine
-  while (parent) {
-    child = { child, logicalId: parent.logicalId, physicalId: parent.physicalId }
-    parent = parent.parent
-  }
-  return child!
-}
+type NodeRef = Vine.ImutElem<Node>
 
 export enum Direction {
   Up = "Up",
@@ -56,11 +32,18 @@ export enum Direction {
   Right = "Right",
 }
 
-// Most operations that modify the tree will return a new tree and a vine.
-// What the vine refers to depends on the operation.
-interface ModifyTreeResponse {
+// Some operations that modify the tree will return a new tree and a node.
+// What the node refers to depends on the operation.
+interface TreeAndNode {
   tree: Tree
-  vine: Vine
+  node: Node
+}
+
+// Other operations that move nodes around will return the new tree and a new
+// vine elem containing the moved node.
+interface TreeAndVine {
+  tree: Tree
+  vine: NodeRef
 }
 
 // Finds the index of a physical node in an array of nodes.
@@ -72,14 +55,14 @@ export function indexOfPhysicalNode(nodes: Node[], physicalId: NodeId) {
 }
 
 // Error class for tree modifications.
-export class TreeModificationError extends Error {}
+export class ModificationError extends Error {}
 
 /**
  * Adds a child to the given node, either as the first or last child. Returns
  * new updated tree and the newly created node.
  */
-export function addChild(tree: Tree, vine: Vine, start: boolean): ModifyTreeResponse {
-  let { logicalId } = vine
+export function addChild(tree: Tree, ref: NodeRef, start: boolean): TreeAndNode {
+  let { logicalId } = ref
   let newNode = createNode()
   let newChildren = tree[logicalId].slice()
 
@@ -90,17 +73,16 @@ export function addChild(tree: Tree, vine: Vine, start: boolean): ModifyTreeResp
   }
 
   let newTree = { ...tree, [logicalId]: newChildren, [newNode.logicalId]: [] }
-  let newVine = { ...newNode, parent: vine }
-  return { tree: newTree, vine: newVine }
+  return { tree: newTree, node: newNode }
 }
 
 /**
  * Adds a sibling to the given node, either before or after the given node.
  * Returns new updated tree and the newly created node.
  */
-export function addSibling(tree: Tree, vine: Vine, before: boolean): ModifyTreeResponse {
-  let { physicalId, parent } = vine
-  if (!parent) throw new TreeModificationError("Cannot add sibling to root node.")
+export function addSibling(tree: Tree, ref: NodeRef, before: boolean): TreeAndNode {
+  let { physicalId, parent } = ref
+  if (!parent) throw new ModificationError("Cannot add sibling to root node.")
   let newNode = createNode()
   let newChildren = tree[parent.logicalId].slice()
   let indexOfNode = indexOfPhysicalNode(newChildren, physicalId)
@@ -112,8 +94,7 @@ export function addSibling(tree: Tree, vine: Vine, before: boolean): ModifyTreeR
   }
 
   let newTree = { ...tree, [parent.logicalId]: newChildren, [newNode.logicalId]: [] }
-  let newVine = { ...newNode, parent }
-  return { tree: newTree, vine: newVine }
+  return { tree: newTree, node: newNode }
 }
 
 /**
@@ -126,11 +107,11 @@ export function addSibling(tree: Tree, vine: Vine, before: boolean): ModifyTreeR
  */
 export function deleteNode(
   tree: Tree,
-  vine: Vine,
+  ref: NodeRef,
   extraReferences: NodeId[],
 ): { tree: Tree; removedIds: Set<NodeId> } {
-  let { physicalId, parent } = vine
-  if (!parent) throw new TreeModificationError("Cannot delete the root node.")
+  let { physicalId, parent } = ref
+  if (!parent) throw new ModificationError("Cannot delete the root node.")
   let newChildren = tree[parent.logicalId].slice()
   let indexOfNode = indexOfPhysicalNode(newChildren, physicalId)
   newChildren.splice(indexOfNode, 1)
@@ -156,10 +137,10 @@ export function deleteNode(
  */
 export function removeChildren(
   tree: Tree,
-  vine: Vine,
+  ref: NodeRef,
   extraReferences: NodeId[],
 ): { tree: Tree; removedIds: Set<NodeId> } {
-  let { logicalId } = vine
+  let { logicalId } = ref
   let newTree = { ...tree, [logicalId]: [] }
 
   extraReferences.push(ROOT)
@@ -180,13 +161,13 @@ export function removeChildren(
  */
 export function flatten(
   tree: Tree,
-  vine: Vine,
+  ref: NodeRef,
   haveOtherReference?: boolean,
 ): { tree: Tree; stillReferenced: boolean } {
-  let { logicalId, physicalId, parent } = vine
-  if (!parent) throw new TreeModificationError("Cannot flatten the root node.")
+  let { logicalId, physicalId, parent } = ref
+  if (!parent) throw new ModificationError("Cannot flatten the root node.")
   if (tree[logicalId].length === 0) {
-    throw new TreeModificationError("Cannot flatten node without any children.")
+    throw new ModificationError("Cannot flatten node without any children.")
   }
 
   let newParentChildren = tree[parent.logicalId].slice()
@@ -226,9 +207,9 @@ export function flatten(
  * Takes a node and replaces it with a new node and adds it as the child of the
  * new node. Returns a new updated tree and the new node.
  */
-export function wrap(tree: Tree, vine: Vine): ModifyTreeResponse {
-  let { logicalId, physicalId, parent } = vine
-  if (!parent) throw new TreeModificationError("Cannot wrap root node.")
+export function wrap(tree: Tree, ref: NodeRef): TreeAndNode {
+  let { logicalId, physicalId, parent } = ref
+  if (!parent) throw new ModificationError("Cannot wrap root node.")
   let newNode = createNode()
   let newChildren = tree[parent.logicalId].slice()
   let indexOfNode = indexOfPhysicalNode(newChildren, physicalId)
@@ -239,8 +220,7 @@ export function wrap(tree: Tree, vine: Vine): ModifyTreeResponse {
     [parent.logicalId]: newChildren,
     [newNode.logicalId]: [{ logicalId, physicalId }],
   }
-  let newVine = { ...newNode, parent }
-  return { tree: newTree, vine: newVine }
+  return { tree: newTree, node: newNode }
 }
 
 /**
@@ -249,11 +229,11 @@ export function wrap(tree: Tree, vine: Vine): ModifyTreeResponse {
  * the first child and +Infinity to make it the last child. Returns a new
  * updated tree, or the same tree if the node didn't actually move.
  */
-export function moveLaterally(tree: Tree, vine: Vine, dest: number): Tree {
-  let { logicalId, physicalId, parent } = vine
-  if (!parent) throw new TreeModificationError("Cannot move the root node.")
+export function moveLaterally(tree: Tree, ref: NodeRef, dest: number): Tree {
+  let { logicalId, physicalId, parent } = ref
+  if (!parent) throw new ModificationError("Cannot move the root node.")
   if (![-Infinity, -1, 1, Infinity].includes(dest)) {
-    throw new TreeModificationError(`Invalid argument to moveLaterally: ${dest}`)
+    throw new Error(`Invalid argument to moveLaterally: ${dest}`)
   }
   let children = tree[parent.logicalId]
   let indexOfNode = indexOfPhysicalNode(children, physicalId)
@@ -283,17 +263,17 @@ export function moveLaterally(tree: Tree, vine: Vine, dest: number): Tree {
 
 /**
  * Moves a node up in the tree, making it the right sibling of its parent.
- * Returns a new updated tree and the new node.
+ * Returns a new updated tree and a vine to the new location of the node.
  */
-export function moveUp(tree: Tree, vine: Vine): ModifyTreeResponse {
-  let { logicalId, physicalId, parent } = vine
-  if (!parent) throw new TreeModificationError("Cannot move the root node.")
+export function moveUp(tree: Tree, ref: NodeRef): TreeAndVine {
+  let { logicalId, physicalId, parent } = ref
+  if (!parent) throw new ModificationError("Cannot move the root node.")
   let {
     logicalId: parentLogicalId,
     physicalId: parentPhysicalId,
     parent: grandParent,
   } = parent
-  if (!grandParent) throw new TreeModificationError("Cannot move child of root node up.")
+  if (!grandParent) throw new ModificationError("Cannot move child of root node up.")
 
   let newParentChildren = tree[parentLogicalId].slice()
   let indexOfNode = indexOfPhysicalNode(newParentChildren, physicalId)
@@ -311,32 +291,32 @@ export function moveUp(tree: Tree, vine: Vine): ModifyTreeResponse {
     [parent.logicalId]: newParentChildren,
     [grandParent.logicalId]: newGrandParentChildren,
   }
-  let newVine = { ...newNode, parent: grandParent }
+  let newVine = Vine.replaceLeaves(grandParent, { ...newNode })
   return { tree: newTree, vine: newVine }
 }
 
 /**
  * Moves a node down in the tree, making it the last child of its left sibling.
  * If it doesn't have a left sibling it makes it the first child of its right
- * sibling. Throws if it has no siblings. Returns a new updated tree and the new
- * node.
+ * sibling. Throws if it has no siblings. Returns a new updated tree and a vine
+ * to the new location of the node.
  */
-export function moveDown(tree: Tree, vine: Vine): ModifyTreeResponse {
-  let { logicalId, physicalId, parent } = vine
-  if (!parent) throw new TreeModificationError("Cannot move the root node.")
+export function moveDown(tree: Tree, ref: NodeRef): TreeAndVine {
+  let { logicalId, physicalId, parent } = ref
+  if (!parent) throw new ModificationError("Cannot move the root node.")
 
   // Need a new physicalId, since we're adding new children.
   let newNode = { logicalId, physicalId: nextId() }
   let siblings = tree[parent.logicalId]
   if (siblings.length === 1) {
-    throw new TreeModificationError("Cannot move only child down in tree.")
+    throw new ModificationError("Cannot move only child down in tree.")
   }
   let indexOfNode = indexOfPhysicalNode(siblings, physicalId)
 
   let firstChild = indexOfNode === 0
   let sibling = firstChild ? siblings[1] : siblings[indexOfNode - 1]
   if (sibling.logicalId === logicalId) {
-    throw new TreeModificationError("Cannot move node into copy of itself.")
+    throw new ModificationError("Cannot move node into copy of itself.")
   }
 
   let newSiblings = siblings.slice()
@@ -354,7 +334,7 @@ export function moveDown(tree: Tree, vine: Vine): ModifyTreeResponse {
     [parent.logicalId]: newSiblings,
     [sibling.logicalId]: newNephews,
   }
-  let newVine = { ...newNode, parent: { ...sibling, parent } }
+  let newVine = Vine.replaceLeaves(parent, Vine.join({ ...sibling }, { ...newNode }))
   return { tree: newTree, vine: newVine }
 }
 
@@ -362,9 +342,9 @@ export function moveDown(tree: Tree, vine: Vine): ModifyTreeResponse {
  * Duplicates a node and adds the duplicated node as the next sibling of
  * original node. Returns a new updated tree and the new node.
  */
-export function duplicateNode(tree: Tree, vine: Vine): ModifyTreeResponse {
-  let { logicalId, physicalId, parent } = vine
-  if (!parent) throw new TreeModificationError("Cannot duplicate root node.")
+export function duplicateNode(tree: Tree, ref: NodeRef): TreeAndNode {
+  let { logicalId, physicalId, parent } = ref
+  if (!parent) throw new ModificationError("Cannot duplicate root node.")
   let newPhysicalId = nextId()
   let newNode = { logicalId, physicalId: newPhysicalId }
   let newChildren = tree[parent.logicalId].slice()
@@ -372,8 +352,7 @@ export function duplicateNode(tree: Tree, vine: Vine): ModifyTreeResponse {
   newChildren.splice(indexOfNode + 1, 0, newNode)
 
   let newTree = { ...tree, [parent.logicalId]: newChildren }
-  let newVine = { ...newNode, parent }
-  return { tree: newTree, vine: newVine }
+  return { tree: newTree, node: newNode }
 }
 
 /**
@@ -382,9 +361,9 @@ export function duplicateNode(tree: Tree, vine: Vine): ModifyTreeResponse {
  * are linked to the children of the original node. Returns a new updated tree
  * and the new node.
  */
-export function shallowDuplicate(tree: Tree, vine: Vine): ModifyTreeResponse {
-  let { logicalId, physicalId, parent } = vine
-  if (!parent) throw new TreeModificationError("Cannot duplicate root node.")
+export function shallowDuplicate(tree: Tree, ref: NodeRef): TreeAndNode {
+  let { logicalId, physicalId, parent } = ref
+  if (!parent) throw new ModificationError("Cannot duplicate root node.")
   let newNode = createNode()
   let newChildren = tree[parent.logicalId].slice()
   let indexOfNode = indexOfPhysicalNode(newChildren, physicalId)
@@ -395,8 +374,7 @@ export function shallowDuplicate(tree: Tree, vine: Vine): ModifyTreeResponse {
     [parent.logicalId]: newChildren,
     [newNode.logicalId]: tree[logicalId].slice(),
   }
-  let newVine = { ...newNode, parent }
-  return { tree: newTree, vine: newVine }
+  return { tree: newTree, node: newNode }
 }
 
 /**
@@ -407,12 +385,12 @@ export function shallowDuplicate(tree: Tree, vine: Vine): ModifyTreeResponse {
  */
 export function deepDuplicate(
   tree: Tree,
-  vine: Vine,
-): { tree: Tree; vine: Vine; mapping: { [index: string]: NodeId } } {
-  let { logicalId, physicalId, parent } = vine
-  if (!parent) throw new TreeModificationError("Cannot duplicate root node.")
+  ref: NodeRef,
+): { tree: Tree; ref: NodeRef; mapping: { [index: string]: NodeId } } {
+  let { logicalId, physicalId, parent } = ref
+  if (!parent) throw new ModificationError("Cannot duplicate root node.")
 
-  let { mapping, subTree, rootId } = duplicateSubTree(tree, vine.logicalId)
+  let { mapping, subTree, rootId } = duplicateSubTree(tree, ref.logicalId)
 
   let newPhysicalId = nextId()
   let newNode = { logicalId: rootId, physicalId: newPhysicalId }
@@ -425,9 +403,7 @@ export function deepDuplicate(
     ...subTree,
     [parent.logicalId]: newChildren,
   }
-  let newVine = { ...newNode, parent }
-
-  return { mapping, tree: newTree, vine: newVine }
+  return { mapping, tree: newTree, node: newNode }
 }
 
 /**
@@ -473,27 +449,23 @@ function duplicateSubTree(
  * entire vine, even if technically the last node needs to be replaced. Because
  * of this, some nodes may be no longer accessible. To accurately calculate the
  * set of inaccessible nodes the caller must pass in an array of any extra
- * references they have into the tree. Returns the new tree, a new reverseVine
+ * references they have into the tree. Returns the new tree, a new reverseRef
  * to the node and a Set of logical ids of nodes that are no longer accessible.
  */
 export function dissociate(
   tree: Tree,
-  rVine: ReverseVine,
+  ref: NodeRef,
   extraReferences: NodeId[],
-): { tree: Tree; rVine: ReverseVine; removedIds: Set<NodeId> } {
-  if (!rVine.child) {
-    throw new TreeModificationError("Can't dissociate the root node.")
+): { tree: Tree; ref: NodeRef; removedIds: Set<NodeId> } {
+  let leaves = Vine.root(ref)
+  if (!leaves.child) {
+    throw new ModificationError("Can't dissociate the root node.")
   }
 
   let newTree = { ...tree }
-  let newReverseVine: ReverseVine = {
-    logicalId: ROOT,
-    physicalId: ROOT,
-    child: undefined,
-  }
-  while (rVine.child) {
-    let { logicalId, physicalId, child } = rVine
-    let newNode: Node = createNode()
+  while (leaves.child) {
+    let { logicalId, physicalId, child } = leaves
+    let newNode = createNode()
 
     let newChildren = tree[logicalId].slice()
     let indexOfNode = indexOfPhysicalNode(newChildren, child.physicalId)
@@ -501,11 +473,8 @@ export function dissociate(
     newTree[logicalId] = newChildren
     newTree[newNode.logicalId] = tree[child.logicalId]
 
-    rVine = { ...newNode, child: child.child }
-
-    // Build up new rVine
-    newReverseVine.child = { ...newNode }
-    newReverseVine = newReverseVine.child
+    let newChild = { ...newNode, child: child.child }
+    leaves = Vine.join(leaves, newChild)
   }
 
   // Now we have to remove an inaccessible nodes in case we replaced more than
@@ -516,7 +485,7 @@ export function dissociate(
     delete newTree[inaccessibleNode]
   }
 
-  return { rVine, tree: newTree, removedIds: inaccessibleNodes }
+  return { ref: leaves, tree: newTree, removedIds: inaccessibleNodes }
 }
 
 /**
