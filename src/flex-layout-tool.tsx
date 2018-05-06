@@ -2,6 +2,7 @@ import * as React from "react"
 
 import DebugTreeState from "debug-tree-state"
 import FlexLayoutDivider from "flex-layout-divider"
+import TreeControl from "keyboard/tree-control"
 import TreeElement from "tree-element"
 import TreeModifier from "tree-modifier"
 
@@ -25,6 +26,7 @@ export default class FlexLayoutTool extends React.Component<{}, {}> {
         <TreeModifier />
         <FlexLayoutDivider vertical={true} />
         <div className="flex-layout-tool-sidebar">
+          <TreeControl />
         </div>
       </div>
     )
