@@ -27,10 +27,12 @@ export type NodeRef = Vine.ImutElem<Node>
 export type MutNodeRef = Vine.MutElem<Node>
 
 export enum Direction {
+  First = "First",
   Up = "Up",
   Down = "Down",
   Left = "Left",
   Right = "Right",
+  Last = "Last",
 }
 
 // Some operations that modify the tree will return a new tree and a node.

@@ -56,9 +56,6 @@ export enum ElementsActionType {
 
   MoveNode,
 
-  MakeFirstChild,
-  MakeLastChild,
-
   Duplicate,
   ShallowDuplicate,
   DeepDuplicate,
@@ -85,8 +82,6 @@ interface ModifyTreeAction {
     | ElementsActionType.Dissociate
     | ElementsActionType.Copy
     | ElementsActionType.Paste
-    | ElementsActionType.MakeFirstChild
-    | ElementsActionType.MakeLastChild
 }
 
 interface MoveNodeAction {
@@ -118,10 +113,12 @@ function createMoveFocusActionCreator(direction: Direction): () => MoveFocusActi
   return () => ({ type: ElementsActionType.MoveFocus, direction })
 }
 
+const moveFocusToFirst = createMoveFocusActionCreator(Direction.First)
 const moveFocusUp = createMoveFocusActionCreator(Direction.Up)
 const moveFocusDown = createMoveFocusActionCreator(Direction.Down)
 const moveFocusLeft = createMoveFocusActionCreator(Direction.Left)
 const moveFocusRight = createMoveFocusActionCreator(Direction.Right)
+const moveFocusToLast = createMoveFocusActionCreator(Direction.Last)
 
 function createModifyActionCreator(eat: ElementsActionType): () => ModifyTreeAction {
   return () => ({ type: eat as any})
@@ -141,25 +138,27 @@ const deepDuplicate = createModifyActionCreator(ElementsActionType.DeepDuplicate
 const dissociate = createModifyActionCreator(ElementsActionType.Dissociate)
 const copy = createModifyActionCreator(ElementsActionType.Copy)
 const paste = createModifyActionCreator(ElementsActionType.Paste)
-const makeFirstChild = createModifyActionCreator(ElementsActionType.MakeFirstChild)
-const makeLastChild = createModifyActionCreator(ElementsActionType.MakeLastChild)
 
 function createMoveNodeActionCreator(direction: Direction): () => MoveNodeAction {
   return () => ({ type: ElementsActionType.MoveNode, direction })
 }
 
+const moveToFirst = createMoveNodeActionCreator(Direction.First)
 const moveUp = createMoveNodeActionCreator(Direction.Up)
 const moveDown = createMoveNodeActionCreator(Direction.Down)
 const moveLeft = createMoveNodeActionCreator(Direction.Left)
 const moveRight = createMoveNodeActionCreator(Direction.Right)
+const moveToLast = createMoveNodeActionCreator(Direction.Last)
 
 export {
   focusElement,
 
+  moveFocusToFirst,
   moveFocusUp,
   moveFocusDown,
   moveFocusLeft,
   moveFocusRight,
+  moveFocusToLast,
 
   addChildStart,
   addChildEnd,
@@ -176,10 +175,10 @@ export {
   copy,
   paste,
 
+  moveToFirst,
   moveUp,
   moveDown,
   moveLeft,
   moveRight,
-  makeFirstChild,
-  makeLastChild,
+  moveToLast,
 }

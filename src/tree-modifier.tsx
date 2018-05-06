@@ -39,10 +39,12 @@ interface Props {
   paste: () => void
 
   // Move focus
+  moveFocusToFirst: () => void
   moveFocusUp: () => void
   moveFocusDown: () => void
   moveFocusLeft: () => void
   moveFocusRight: () => void
+  moveFocusToLast: () => void
 }
 
 function mapDispatchToProps(dispatch: Dispatch) {
@@ -56,12 +58,12 @@ function mapDispatchToProps(dispatch: Dispatch) {
     flatten: () => { dispatch(TreeActions.flatten()) },
     wrap: () => { dispatch(TreeActions.wrap()) },
 
+    makeFirstChild: () => { dispatch(TreeActions.moveToFirst()) },
     moveUp: () => { dispatch(TreeActions.moveUp()) },
     moveDown: () => { dispatch(TreeActions.moveDown()) },
     moveLeft: () => { dispatch(TreeActions.moveLeft()) },
     moveRight: () => { dispatch(TreeActions.moveRight()) },
-    makeFirstChild: () => { dispatch(TreeActions.makeFirstChild()) },
-    makeLastChild: () => { dispatch(TreeActions.makeLastChild()) },
+    makeLastChild: () => { dispatch(TreeActions.moveToLast()) },
 
     duplicate: () => { dispatch(TreeActions.duplicate()) },
     shallowDuplicate: () => { dispatch(TreeActions.shallowDuplicate()) },
@@ -70,10 +72,12 @@ function mapDispatchToProps(dispatch: Dispatch) {
     copy: () => { dispatch(TreeActions.copy()) },
     paste: () => { dispatch(TreeActions.paste()) },
 
+    moveFocusToFirst: () => { dispatch(TreeActions.moveFocusToFirst()) },
     moveFocusUp: () => { dispatch(TreeActions.moveFocusUp()) },
     moveFocusDown: () => { dispatch(TreeActions.moveFocusDown()) },
     moveFocusLeft: () => { dispatch(TreeActions.moveFocusLeft()) },
     moveFocusRight: () => { dispatch(TreeActions.moveFocusRight()) },
+    moveFocusToLast: () => { dispatch(TreeActions.moveFocusToLast()) },
   }
 }
 
@@ -126,10 +130,12 @@ const TreeModifier: React.SFC<Props> = props => {
       </div>
       <div>
         <h3>Move Focus</h3>
+        {formatButton(props.moveFocusToFirst, "Move Focus To First")}
         {formatButton(props.moveFocusUp, "Move Focus Up")}
         {formatButton(props.moveFocusDown, "Move Focus Down")}
         {formatButton(props.moveFocusRight, "Move Focus Right")}
         {formatButton(props.moveFocusLeft, "Move Focus Left")}
+        {formatButton(props.moveFocusToLast, "Move Focus To Last")}
       </div>
     </div>
   )
