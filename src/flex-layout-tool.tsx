@@ -35,8 +35,12 @@ export default class FlexLayoutTool extends React.Component<{}, State> {
             focus={focusInfo => this.setState({ focusInfo })}
             parentFlex={false}
           />
-           */}
-          <TreeElement logicalId="0" />
+         */}
+         <TreeElement
+           logicalId="0"
+           physicalId="0"
+           focusVine={undefined /* set by Redux */}
+          />
         </div>
         <FlexLayoutDivider horizontal={true} />
         <TreeModifier />

@@ -110,6 +110,19 @@ export type ElementsAction =
   | ModifyTreeAction
   | MoveNodeAction
 
+function focusElement(element: NodeRef): FocusElementAction {
+  return { type: ElementsActionType.FocusElement, element }
+}
+
+function createMoveFocusActionCreator(direction: Direction): () => MoveFocusAction {
+  return () => ({ type: ElementsActionType.MoveFocus, direction })
+}
+
+const moveFocusUp = createMoveFocusActionCreator(Direction.Up)
+const moveFocusDown = createMoveFocusActionCreator(Direction.Down)
+const moveFocusLeft = createMoveFocusActionCreator(Direction.Left)
+const moveFocusRight = createMoveFocusActionCreator(Direction.Right)
+
 function createModifyActionCreator(eat: ElementsActionType): () => ModifyTreeAction {
   return () => ({ type: eat as any})
 }
@@ -140,16 +153,9 @@ const moveDown = createMoveNodeActionCreator(Direction.Down)
 const moveLeft = createMoveNodeActionCreator(Direction.Left)
 const moveRight = createMoveNodeActionCreator(Direction.Right)
 
-function createMoveFocusActionCreator(direction: Direction): () => MoveFocusAction {
-  return () => ({ type: ElementsActionType.MoveFocus, direction })
-}
-
-const moveFocusUp = createMoveFocusActionCreator(Direction.Up)
-const moveFocusDown = createMoveFocusActionCreator(Direction.Down)
-const moveFocusLeft = createMoveFocusActionCreator(Direction.Left)
-const moveFocusRight = createMoveFocusActionCreator(Direction.Right)
-
 export {
+  focusElement,
+
   moveFocusUp,
   moveFocusDown,
   moveFocusLeft,

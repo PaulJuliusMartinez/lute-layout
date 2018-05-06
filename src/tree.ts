@@ -24,6 +24,7 @@ export interface Tree {
 }
 
 export type NodeRef = Vine.ImutElem<Node>
+export type MutNodeRef = Vine.MutElem<Node>
 
 export enum Direction {
   Up = "Up",

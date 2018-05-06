@@ -26,6 +26,8 @@ export function elements(
 ): ElementsState {
   switch (action.type) {
     // Focusing nodes
+    case ElementsActionType.FocusElement:
+      return focusElement(state, action.element)
     case ElementsActionType.MoveFocus:
       return moveFocus(state, action.direction)
     // Adding/Removing Nodes
@@ -72,6 +74,10 @@ export function elements(
     default:
       return state
   }
+}
+
+function focusElement(state: ElementsState, element: Tree.NodeRef): ElementsState {
+  return { ...state, focusedLeaf: element }
 }
 
 function moveFocus(state: ElementsState, direction: Tree.Direction): ElementsState {
