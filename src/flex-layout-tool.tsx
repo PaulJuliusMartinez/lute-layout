@@ -1,17 +1,11 @@
 import * as React from "react"
 
 import DebugTreeState from "debug-tree-state"
-import ElementController from "element-controller"
-import FlexElement, { DEFAULT_COLOR, DEFAULT_WIDTH, FocusInfo } from "flex-element"
 import FlexLayoutDivider from "flex-layout-divider"
 import TreeElement from "tree-element"
 import TreeModifier from "tree-modifier"
 
-interface State {
-  focusInfo: FocusInfo
-}
-
-export default class FlexLayoutTool extends React.Component<{}, State> {
+export default class FlexLayoutTool extends React.Component<{}, {}> {
   constructor(props: {}) {
     super(props)
     this.state = {} as any
@@ -21,21 +15,6 @@ export default class FlexLayoutTool extends React.Component<{}, State> {
     return (
       <div className="flex-layout-tool">
         <div className="flex-layout">
-          {/*
-          <FlexElement
-            id={0}
-            addSiblingBefore={() => alert("Can't add siblings to root.")}
-            addSiblingAfter={() => alert("Can't add siblings to root.")}
-            remove={() => alert("Can't remove root element.")}
-            marginWidth={DEFAULT_WIDTH}
-            borderWidth={DEFAULT_WIDTH}
-            borderColor={DEFAULT_COLOR}
-            paddingWidth={DEFAULT_WIDTH}
-            resetStyleCounter={0}
-            focus={focusInfo => this.setState({ focusInfo })}
-            parentFlex={false}
-          />
-         */}
          <TreeElement
            logicalId="0"
            physicalId="0"
@@ -46,7 +25,6 @@ export default class FlexLayoutTool extends React.Component<{}, State> {
         <TreeModifier />
         <FlexLayoutDivider vertical={true} />
         <div className="flex-layout-tool-sidebar">
-          <ElementController focusInfo={this.state.focusInfo} />
         </div>
       </div>
     )
