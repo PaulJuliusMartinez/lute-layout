@@ -28,9 +28,16 @@ export function elements(
     case ElementsActionType.SetElementStyle: {
       let { logicalId } = state.focusedLeaf
       let currentElement = state.elements[logicalId]
+      let currentElementStyles = currentElement.styles
       return {
         ...state,
-        elements: { ...elements, [logicalId]: { ...currentElement, ...action.style } },
+        elements: {
+          ...state.elements,
+          [logicalId]: {
+            ...currentElement,
+            styles: { ...currentElementStyles, ...action.style },
+          },
+        },
       }
     }
     case ElementsActionType.SetElementContent: {
