@@ -125,14 +125,14 @@ function moveFocus(state: ElementsState, direction: Tree.Direction): ElementsSta
 
 function addChild(state: ElementsState, start: boolean): ElementsState {
   let { tree, node } = Tree.addChild(state.tree, state.focusedLeaf, start)
-  let newElement = createElement(ElementType.Content, node.logicalId)
+  let newElement = createElement(ElementType.Block, node.logicalId)
   let newElements = { ...state.elements, [node.logicalId]: newElement }
   return { ...state, tree, elements: newElements }
 }
 
 function addSibling(state: ElementsState, before: boolean): ElementsState {
   let { tree, node } = Tree.addSibling(state.tree, state.focusedLeaf, before)
-  let newElement = createElement(ElementType.Content, node.logicalId)
+  let newElement = createElement(ElementType.Block, node.logicalId)
   let newElements = { ...state.elements, [node.logicalId]: newElement }
   return { ...state, tree, elements: newElements }
 }
@@ -196,7 +196,7 @@ function flatten(state: ElementsState): ElementsState {
 
 function wrap(state: ElementsState): ElementsState {
   let { tree, node } = Tree.wrap(state.tree, state.focusedLeaf)
-  let newElement = createElement(ElementType.Content, node.logicalId)
+  let newElement = createElement(ElementType.Block, node.logicalId)
   let newElements = { ...state.elements, [node.logicalId]: newElement }
   let newFocusedLeaf = Vine.replaceLeaves(state.focusedLeaf.parent!, { ...node })
   return { ...state, tree, elements: newElements, focusedLeaf: newFocusedLeaf }

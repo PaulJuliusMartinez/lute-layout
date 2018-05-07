@@ -1,7 +1,7 @@
 import * as React from "react"
 import { connect } from "react-redux"
 
-import { ContentElement, Element } from "element"
+import { Element } from "element"
 import { focusElement } from "elements-actions"
 import { Dispatch, Store } from "store"
 import * as Tree from "tree"
@@ -115,8 +115,7 @@ class TreeElement extends React.Component<Props, State> {
 
   render() {
     let { logicalId, physicalId, element, children, focusVine } = this.props
-    let content =
-      children.length === 0 ? (element as ContentElement).content : this.formatChildren()
+    let content = children.length === 0 ? element.content : this.formatChildren()
 
     let onFocusPath = Boolean(focusVine)
     let focused = focusVine && !focusVine.child
