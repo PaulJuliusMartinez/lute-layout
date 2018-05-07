@@ -1,4 +1,4 @@
-import { CSSProperties } from "react"
+import * as CSS from "csstype"
 
 import * as Flex from "flex"
 import { NodeId } from "tree"
@@ -11,30 +11,30 @@ export enum ElementType {
 }
 
 export interface Element {
-  styles: React.CSSProperties
+  styles: CSS.Properties
   content: string
 }
 
-const DEFAULT_CHILD_SETTINGS: CSSProperties = {
+const DEFAULT_CHILD_SETTINGS: CSS.Properties = {
   margin: "16px",
   borderWidth: "16px",
   borderColor: "#808080",
   padding: "16px",
 }
 
-const FLEX_DEFAULT_STYLES: CSSProperties = Object.assign(
+const FLEX_DEFAULT_STYLES: CSS.Properties = Object.assign(
   { display: "flex" },
   DEFAULT_CHILD_SETTINGS,
 )
-const INLINE_FLEX_DEFAULT_STYLES: CSSProperties = Object.assign(
+const INLINE_FLEX_DEFAULT_STYLES: CSS.Properties = Object.assign(
   { display: "inline-flex" },
   DEFAULT_CHILD_SETTINGS,
 )
-const BLOCK_DEFAULT_STYLES: CSSProperties = Object.assign(
+const BLOCK_DEFAULT_STYLES: CSS.Properties = Object.assign(
   { display: "block" },
   DEFAULT_CHILD_SETTINGS,
 )
-const INLINE_DEFAULT_STYLES: CSSProperties = Object.assign(
+const INLINE_DEFAULT_STYLES: CSS.Properties = Object.assign(
   { display: "inline" },
   DEFAULT_CHILD_SETTINGS,
 )

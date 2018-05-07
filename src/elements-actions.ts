@@ -1,46 +1,18 @@
+import * as CSS from "csstype"
+
 import { ElementType } from "element"
 import { Direction, NodeRef } from "tree"
 
 export enum ElementsActionType {
+  // Element Style modifications
+
+  SetElementStyle,
+  SetElementContent,
+
   // Navigating Tree
 
   FocusElement,
   MoveFocus,
-
-  // Element Style modifications
-
-  SetElementType,
-
-  SetMargin,
-  SetBorderWidth,
-  SetBorderColor,
-  SetPadding,
-
-  SetColor,
-  SetBackgroundColor,
-
-  SetFontSize,
-  SetFontWeight,
-  SetFontStyle,
-
-  SetChildMargin,
-  SetChildBorderWidth,
-  SetChildBorderColor,
-  SetChildPadding,
-
-  ResetChildStyles,
-
-  SetFlexDirection,
-  SetJustifyContent,
-  SetAlignItems,
-
-  SetFlexGrow,
-  SetFlexShrink,
-  SetFlexBasis,
-  SetAlignSelf,
-
-  SetContent,
-  SetDisplay,
 
   // Tree modifications
 
@@ -64,6 +36,16 @@ export enum ElementsActionType {
 
   Copy,
   Paste,
+}
+
+interface SetElementStyleAction {
+  type: ElementsActionType.SetElementStyle
+  style: CSS.Properties
+}
+
+interface SetElementContentAction {
+  type: ElementsActionType.SetElementContent
+  content: string
 }
 
 interface ModifyTreeAction {
@@ -100,10 +82,20 @@ interface MoveFocusAction {
 }
 
 export type ElementsAction =
+  | SetElementStyleAction
+  | SetElementContentAction
   | FocusElementAction
   | MoveFocusAction
   | ModifyTreeAction
   | MoveNodeAction
+
+function setElementStyle(style: CSS.Properties) {
+  return { type: ElementsActionType.SetElementStyle, style }
+}
+
+function setElementContent(content: string) {
+  return { type: ElementsActionType.SetElementContent, content }
+}
 
 function focusElement(element: NodeRef): FocusElementAction {
   return { type: ElementsActionType.FocusElement, element }
@@ -151,6 +143,9 @@ const moveRight = createMoveNodeActionCreator(Direction.Right)
 const moveToLast = createMoveNodeActionCreator(Direction.Last)
 
 export {
+  setElementStyle,
+  setElementContent,
+
   focusElement,
 
   moveFocusToFirst,

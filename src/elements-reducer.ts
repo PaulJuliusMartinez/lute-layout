@@ -25,6 +25,25 @@ export function elements(
   action: ElementsAction,
 ): ElementsState {
   switch (action.type) {
+    case ElementsActionType.SetElementStyle: {
+      let { logicalId } = state.focusedLeaf
+      let currentElement = state.elements[logicalId]
+      return {
+        ...state,
+        elements: { ...elements, [logicalId]: { ...currentElement, ...action.style } },
+      }
+    }
+    case ElementsActionType.SetElementContent: {
+      let { logicalId } = state.focusedLeaf
+      let currentElement = state.elements[logicalId]
+      return {
+        ...state,
+        elements: {
+          ...elements,
+          [logicalId]: { ...currentElement, content: action.content },
+        },
+      }
+    }
     // Focusing nodes
     case ElementsActionType.FocusElement:
       return focusElement(state, action.element)
@@ -52,12 +71,18 @@ export function elements(
     case ElementsActionType.MoveNode:
       let { direction } = action
       switch (direction) {
-        case Tree.Direction.First: return moveLaterally(state, -Infinity)
-        case Tree.Direction.Left: return moveLaterally(state, -1)
-        case Tree.Direction.Right: return moveLaterally(state, 1)
-        case Tree.Direction.Up: return moveUp(state)
-        case Tree.Direction.Down: return moveDown(state)
-        case Tree.Direction.Last: return moveLaterally(state, Infinity)
+        case Tree.Direction.First:
+          return moveLaterally(state, -Infinity)
+        case Tree.Direction.Left:
+          return moveLaterally(state, -1)
+        case Tree.Direction.Right:
+          return moveLaterally(state, 1)
+        case Tree.Direction.Up:
+          return moveUp(state)
+        case Tree.Direction.Down:
+          return moveDown(state)
+        case Tree.Direction.Last:
+          return moveLaterally(state, Infinity)
       }
 
     // Copying/duplicating nodes

@@ -120,7 +120,7 @@ class TreeElement extends React.Component<Props, State> {
     let onFocusPath = Boolean(focusVine)
     let focused = focusVine && !focusVine.child
 
-    let styles = Object.assign({}, STYLES)
+    let styles = Object.assign({}, STYLES, element.styles)
     if (onFocusPath) styles.borderColor = "#00f"
     if (focused) styles.borderColor = "#f00"
 
