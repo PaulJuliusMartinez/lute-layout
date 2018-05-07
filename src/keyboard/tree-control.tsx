@@ -97,6 +97,9 @@ class TreeControl extends React.Component<TreeControlProps, TreeControlState> {
   }
 
   handleKeyDown = (e: KeyboardEvent) => {
+    let activeElement = document.activeElement
+    if (activeElement && activeElement.tagName === "INPUT") return
+
     if (e.repeat) return
     if (e.key === "Shift") return
 
