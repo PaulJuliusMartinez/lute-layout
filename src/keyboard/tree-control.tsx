@@ -9,8 +9,8 @@ interface TreeControlProps {
 }
 
 const KEY_FN_MAP: { [fn: string]: any } = {
-  I: "addSiblingBefore",
-  A: "addSiblingAfter",
+  O: "addSiblingBefore",
+  o: "addSiblingAfter",
   i: "addChildStart",
   a: "addChildEnd",
   n: "addChildEnd",
@@ -21,7 +21,7 @@ const KEY_FN_MAP: { [fn: string]: any } = {
   },
 
   f: "flatten",
-  O: "wrap",
+  w: "wrap",
 
   m: {
     h: "moveUp",
@@ -91,9 +91,15 @@ interface TreeControlState {
 }
 
 class TreeControl extends React.Component<TreeControlProps, TreeControlState> {
+  ref: HTMLElement
+
   constructor(props: TreeControlProps) {
     super(props)
     this.state = { inputs: [] }
+  }
+
+  initRef = (elem: HTMLInputElement | null) => {
+    if (elem) this.ref = elem
   }
 
   handleKeyDown = (e: KeyboardEvent) => {
@@ -131,6 +137,7 @@ class TreeControl extends React.Component<TreeControlProps, TreeControlState> {
 
   componentDidMount() {
     window.addEventListener("keydown", this.handleKeyDown)
+    this.ref.focus()
   }
 
   componentWillUnmount() {
@@ -138,7 +145,7 @@ class TreeControl extends React.Component<TreeControlProps, TreeControlState> {
   }
 
   render() {
-    return null
+    return <span ref={this.initRef} tabIndex={-1} />
   }
 }
 

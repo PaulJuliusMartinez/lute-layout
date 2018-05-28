@@ -6,6 +6,7 @@ import FlexLayoutTool from "flex-layout-tool"
 import store from "store"
 
 import "stylesheets/app.styl"
+import "stylesheets/keyboard.styl"
 
 ReactDOM.render(
   <Provider store={store}>

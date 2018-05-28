@@ -3,7 +3,7 @@ import * as React from "react"
 import CSSPropertiesEditor from "css-properties-editor"
 import DebugTreeState from "debug-tree-state"
 import FlexLayoutDivider from "flex-layout-divider"
-import TreeControl from "keyboard/tree-control"
+import ModeController from "keyboard/mode-controller"
 import TreeElement from "tree-element"
 import TreeModifier from "tree-modifier"
 
@@ -29,7 +29,7 @@ export default class FlexLayoutTool extends React.Component<{}, {}> {
         <div className="flex-layout-tool-sidebar">
           <CSSPropertiesEditor logicalId="0" />
         </div>
-        <TreeControl />
+        <ModeController />
       </div>
     )
   }

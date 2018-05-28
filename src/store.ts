@@ -9,15 +9,18 @@ import {
 import { createLogger } from "redux-logger"
 
 import { elements, ElementsState } from "elements-reducer"
+import { mode, ModeState } from "keyboard/modes"
 
 export interface Store {
   elements: ElementsState
+  mode: ModeState
 }
 
 export type Dispatch = ReduxDispatch<Store>
 
 const rootReducer = combineReducers<Store>({
   elements,
+  mode,
 })
 
 const logger = createLogger({
