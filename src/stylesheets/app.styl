@@ -47,3 +47,24 @@ body
 
 .tree-modifier
   display flex
+
+/* For displaying focused elements */
+
+FOCUS_WIDTH = 4px
+
+.focus-path, .focused-element
+  position relative
+
+  &::after
+    content ""
+    position absolute
+    top 0 - FOCUS_WIDTH
+    right 0 - FOCUS_WIDTH
+    bottom 0 - FOCUS_WIDTH
+    left 0 - FOCUS_WIDTH
+    border-width FOCUS_WIDTH
+    border-style dashed
+    border-color rgba(0, 0, 0, 0.5)
+
+.focused-element::after
+  border-color rgb(0, 0, 256)

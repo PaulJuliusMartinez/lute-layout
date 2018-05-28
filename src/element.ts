@@ -16,10 +16,11 @@ export interface Element {
 }
 
 const DEFAULT_CHILD_SETTINGS: CSS.Properties = {
-  margin: "16px",
-  borderWidth: "16px",
+  margin: "4px",
+  borderWidth: "4px",
   borderColor: "#808080",
-  padding: "16px",
+  borderStyle: "solid",
+  padding: "4px",
 }
 
 const FLEX_DEFAULT_STYLES: CSS.Properties = Object.assign(

@@ -7,14 +7,6 @@ import { Dispatch, Store } from "store"
 import * as Tree from "tree"
 import * as Vine from "data-structures/vine"
 
-const STYLES: React.CSSProperties = {
-  margin: "16px",
-  borderWidth: "16px",
-  borderStyle: "solid",
-  borderColor: "#888",
-  padding: "16px",
-}
-
 interface OwnProps {
   logicalId: string
   physicalId: string
@@ -120,13 +112,14 @@ class TreeElement extends React.Component<Props, State> {
     let onFocusPath = Boolean(focusVine)
     let focused = focusVine && !focusVine.child
 
-    let styles = Object.assign({}, STYLES, element.styles)
-    if (onFocusPath) styles.borderColor = "#00f"
-    if (focused) styles.borderColor = "#f00"
+    let className = ""
+    if (onFocusPath) className = "focus-path"
+    if (focused) className += " focused-element"
 
     return (
       <div
-        style={styles}
+        className={className}
+        style={element.styles as any}
         onClick={this.handleElementClick}
         ref={this.divRef}
         data-lid={logicalId}
