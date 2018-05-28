@@ -2,10 +2,25 @@ import * as React from "react"
 import { connect } from "react-redux"
 
 import * as TreeActions from "elements-actions"
-import { Dispatch } from "store"
+import { Dispatch, Store } from "store"
 
-interface TreeControlProps {
+enum Axis {
+  Horizontal,
+  Vertical,
+}
+
+interface ConnectStateProps {
+  axis: Axis
+}
+
+interface ConnectDispatchProps {
   [fn: string]: () => void
+}
+
+type TreeControlProps = ConnectStateProps & ConnectDispatchProps
+
+function hv(horizontal: string, vertical: string): (axis: Axis) => string {
+  return (axis: Axis) => axis === Axis.Horizontal ? horizontal : vertical
 }
 
 const KEY_FN_MAP: { [fn: string]: any } = {
@@ -24,66 +39,83 @@ const KEY_FN_MAP: { [fn: string]: any } = {
   w: "wrap",
 
   m: {
-    h: "moveUp",
-    j: "moveRight",
-    k: "moveLeft",
-    l: "moveDown",
+    h: hv("moveLeft", "moveUp"),
+    j: hv("moveDown", "moveRight"),
+    k: hv("moveUp", "moveLeft"),
+    l: hv("moveRight", "moveDown"),
     0: "moveToFirst",
     $: "moveToLast",
   },
 
-  h: "moveFocusUp",
-  j: "moveFocusRight",
-  k: "moveFocusLeft",
-  l: "moveFocusDown",
+  h: hv("moveFocusLeft", "moveFocusUp"),
+  j: hv("moveFocusDown", "moveFocusRight"),
+  k: hv("moveFocusUp", "moveFocusLeft"),
+  l: hv("moveFocusRight", "moveFocusDown"),
 
-  ArrowLeft: "moveFocusUp",
-  ArrowDown: "moveFocusRight",
-  ArrowUp: "moveFocusLeft",
-  ArrowRight: "moveFocusDown",
+  ArrowLeft: hv("moveFocusLeft", "moveFocusUp"),
+  ArrowDown: hv("moveFocusDown", "moveFocusRight"),
+  ArrowUp: hv("moveFocusUp", "moveFocusLeft"),
+  ArrowRight: hv("moveFocusRight", "moveFocusDown"),
 
   0: "moveFocusToFirst",
   $: "moveFocusToLast",
 
-  H: "moveUp",
-  J: "moveRight",
-  K: "moveLeft",
-  L: "moveDown",
+  H: hv("moveLeft", "moveUp"),
+  J: hv("moveDown", "moveRight"),
+  K: hv("moveUp", "moveLeft"),
+  L: hv("moveRight", "moveDown"),
 }
 
-function mapDispatchToProps(dispatch: Dispatch) {
+function mapStateToProps(store: Store): ConnectStateProps {
+  let { focusedLeaf, elements } = store.elements
+  if (!focusedLeaf.parent) return { axis: Axis.Vertical }
+  let parentId = focusedLeaf.parent.logicalId
+  let parent = elements[parentId]
+
+  let axis = Axis.Vertical
+  if (parent.styles.display === "flex") {
+    let flexDirection = parent.styles.flexDirection || parent.styles["flex-direction"]
+    if (!flexDirection || flexDirection === "row" || flexDirection === "row-reverse") {
+      axis = Axis.Horizontal
+    }
+  }
+
+  return { axis }
+}
+
+function mapDispatchToProps(dispatch: Dispatch): ConnectDispatchProps {
   return {
-    addChildStart: () => { dispatch(TreeActions.addChildStart()) },
-    addChildEnd: () => { dispatch(TreeActions.addChildEnd()) },
-    addSiblingBefore: () => { dispatch(TreeActions.addSiblingBefore()) },
-    addSiblingAfter: () => { dispatch(TreeActions.addSiblingAfter()) },
+      addChildStart: () => { dispatch(TreeActions.addChildStart()) },
+      addChildEnd: () => { dispatch(TreeActions.addChildEnd()) },
+      addSiblingBefore: () => { dispatch(TreeActions.addSiblingBefore()) },
+      addSiblingAfter: () => { dispatch(TreeActions.addSiblingAfter()) },
 
-    deleteElement: () => { dispatch(TreeActions.deleteNode()) },
-    removeChildren: () => { dispatch(TreeActions.removeChildren()) },
-    flatten: () => { dispatch(TreeActions.flatten()) },
-    wrap: () => { dispatch(TreeActions.wrap()) },
+      deleteElement: () => { dispatch(TreeActions.deleteNode()) },
+      removeChildren: () => { dispatch(TreeActions.removeChildren()) },
+      flatten: () => { dispatch(TreeActions.flatten()) },
+      wrap: () => { dispatch(TreeActions.wrap()) },
 
-    moveToFirst: () => { dispatch(TreeActions.moveToFirst()) },
-    moveUp: () => { dispatch(TreeActions.moveUp()) },
-    moveDown: () => { dispatch(TreeActions.moveDown()) },
-    moveLeft: () => { dispatch(TreeActions.moveLeft()) },
-    moveRight: () => { dispatch(TreeActions.moveRight()) },
-    moveToLast: () => { dispatch(TreeActions.moveToLast()) },
+      moveToFirst: () => { dispatch(TreeActions.moveToFirst()) },
+      moveUp: () => { dispatch(TreeActions.moveUp()) },
+      moveDown: () => { dispatch(TreeActions.moveDown()) },
+      moveLeft: () => { dispatch(TreeActions.moveLeft()) },
+      moveRight: () => { dispatch(TreeActions.moveRight()) },
+      moveToLast: () => { dispatch(TreeActions.moveToLast()) },
 
-    duplicate: () => { dispatch(TreeActions.duplicate()) },
-    shallowDuplicate: () => { dispatch(TreeActions.shallowDuplicate()) },
-    deepDuplicate: () => { dispatch(TreeActions.deepDuplicate()) },
-    dissociate: () => { dispatch(TreeActions.dissociate()) },
-    copy: () => { dispatch(TreeActions.copy()) },
-    paste: () => { dispatch(TreeActions.paste()) },
+      duplicate: () => { dispatch(TreeActions.duplicate()) },
+      shallowDuplicate: () => { dispatch(TreeActions.shallowDuplicate()) },
+      deepDuplicate: () => { dispatch(TreeActions.deepDuplicate()) },
+      dissociate: () => { dispatch(TreeActions.dissociate()) },
+      copy: () => { dispatch(TreeActions.copy()) },
+      paste: () => { dispatch(TreeActions.paste()) },
 
-    moveFocusToFirst: () => { dispatch(TreeActions.moveFocusToFirst()) },
-    moveFocusUp: () => { dispatch(TreeActions.moveFocusUp()) },
-    moveFocusDown: () => { dispatch(TreeActions.moveFocusDown()) },
-    moveFocusLeft: () => { dispatch(TreeActions.moveFocusLeft()) },
-    moveFocusRight: () => { dispatch(TreeActions.moveFocusRight()) },
-    moveFocusToLast: () => { dispatch(TreeActions.moveFocusToLast()) },
-  } as TreeControlProps
+      moveFocusToFirst: () => { dispatch(TreeActions.moveFocusToFirst()) },
+      moveFocusUp: () => { dispatch(TreeActions.moveFocusUp()) },
+      moveFocusDown: () => { dispatch(TreeActions.moveFocusDown()) },
+      moveFocusLeft: () => { dispatch(TreeActions.moveFocusLeft()) },
+      moveFocusRight: () => { dispatch(TreeActions.moveFocusRight()) },
+      moveFocusToLast: () => { dispatch(TreeActions.moveFocusToLast()) },
+  }
 }
 
 interface TreeControlState {
@@ -130,6 +162,8 @@ class TreeControl extends React.Component<TreeControlProps, TreeControlState> {
 
     if (typeof action === "string") {
       this.setState({ inputs: [], }, this.props[action])
+    } else if (typeof action === "function") {
+      this.setState({ inputs: [], }, this.props[action(this.props.axis)])
     } else if (typeof action === "object") {
       this.setState({ inputs: [...inputs, e.key] })
     }
@@ -149,4 +183,4 @@ class TreeControl extends React.Component<TreeControlProps, TreeControlState> {
   }
 }
 
-export default connect(undefined, mapDispatchToProps)(TreeControl)
+export default connect(mapStateToProps, mapDispatchToProps)(TreeControl)
