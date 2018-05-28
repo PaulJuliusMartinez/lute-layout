@@ -3,6 +3,8 @@ import * as React from "react"
 import { connect } from "react-redux"
 
 import { setElementContent, setElementStyle } from "elements-actions"
+import { Mode } from "keyboard/modes"
+import ModeInput from "keyboard/mode-input"
 import * as Flex from "flex"
 import { Dispatch, Store } from "store"
 
@@ -28,76 +30,96 @@ function mapStateToProps(store: Store, ownProps: OwnProps): ConnectStateProps {
 
 function mapDispatchToProps(dispatch: Dispatch): ConnectDispatchProps {
   return {
-    setStyle: (style: CSS.Properties) => { dispatch(setElementStyle(style)) },
-    setContent: (content: string) => { dispatch(setElementContent(content)) },
+    setStyle: (style: CSS.Properties) => {
+      dispatch(setElementStyle(style))
+    },
+    setContent: (content: string) => {
+      dispatch(setElementContent(content))
+    },
   }
 }
 
 interface State {
-  searchInputValue: string
+  ruleInputValue: string
+  valueInputValue: string
 }
 
 type CSSRule = keyof CSS.Properties
 
 class CSSPropertiesEditor extends React.Component<Props, State> {
+  ruleInput: HTMLInputElement
+  valueInput: HTMLInputElement
+
   constructor(props: Props) {
     super(props)
-    this.state = { searchInputValue: "" }
+    this.state = { ruleInputValue: "", valueInputValue: "" }
   }
 
-  handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    this.setState({ searchInputValue: e.currentTarget.value })
+  setRuleInputRef = (e: HTMLInputElement | null) => {
+    if (e) this.ruleInput = e
   }
 
-  handleSearchInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  setValueInputRef = (e: HTMLInputElement | null) => {
+    if (e) this.valueInput = e
+  }
+
+  handleRuleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ ruleInputValue: e.currentTarget.value })
+  }
+
+  handleRuleInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      console.log("enter hit")
+      this.valueInput.focus()
     }
   }
 
-  handleRuleValueChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-    rule: CSSRule,
-  ) => {
-    this.props.setStyle({ [rule]: e.currentTarget.value })
+  handleValueInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    this.setState({ valueInputValue: e.currentTarget.value })
   }
 
-  formatSelect(rule: CSSRule, options: string[]) {
-    let formattedOptions = options.map(o => (
-      <option key={o} value={o}>
-        {o}
-      </option>
-    ))
+  handleValueInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      this.props.setStyle({ [this.state.ruleInputValue]: this.state.valueInputValue })
+      this.ruleInput.focus()
+    }
+  }
 
-    return (
-      <div>
-        {rule}:{" "}
-        <select
-          value={this.props.styles[rule]}
-          onChange={e => this.handleRuleValueChange(e, rule)}
-        >
-          {formattedOptions}
-        </select>
-      </div>
-    )
+  formatStyles() {
+    let { styles } = this.props
+    let formattedStyles = Object.keys(styles).map(ruleName => {
+      return (
+        <tr key={ruleName} className="set-style">
+          <td className="rule-name">{ruleName}</td>
+          <td className="rule-value">{(styles as any)[ruleName]}</td>
+        </tr>
+      )
+    })
+
+    return <table><tbody>{formattedStyles}</tbody></table>
   }
 
   render() {
     return (
       <div>
-        <input
+        <ModeInput
+          innerRef={this.setRuleInputRef}
+          mode={Mode.StyleEditing}
           type="text"
-          value={this.state.searchInputValue}
-          onChange={this.handleSearchInputChange}
-          onKeyPress={this.handleSearchInputKeyPress}
-          placeholder="Enter the name of a CSS rule"
+          value={this.state.ruleInputValue}
+          onChange={this.handleRuleInputChange}
+          onKeyPress={this.handleRuleInputKeyPress}
+          placeholder="CSS Rule Name"
         />
-        <div>
-          <h3>Layout</h3>
-          {this.formatSelect("display", ["block", "flex", "inline"])}
-          {this.formatSelect("justifyContent", ["flex-start", "flex-end", "center", "space-between"])}
-          {this.formatSelect("alignItems", ["flex-start", "flex-end", "center", "stretch"])}
-        </div>
+        <ModeInput
+          innerRef={this.setValueInputRef}
+          mode={Mode.StyleEditing}
+          type="text"
+          value={this.state.valueInputValue}
+          onChange={this.handleValueInputChange}
+          onKeyPress={this.handleValueInputKeyPress}
+          placeholder="Value"
+        />
+        {this.formatStyles()}
       </div>
     )
   }
