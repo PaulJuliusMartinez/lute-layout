@@ -6,10 +6,18 @@ import * as Vine from "data-structures/vine"
 
 type ElementMap = { [logicalId: string]: Element }
 
+export enum FocusedSide {
+  Top,
+  Right,
+  Bottom,
+  Left,
+}
+
 export interface ElementsState {
   tree: Tree.Tree
   elements: ElementMap
   focusedLeaf: Tree.NodeRef
+  focusedSide: FocusedSide
   copiedElementId?: Tree.NodeId
 }
 
@@ -18,6 +26,7 @@ const defaultState: ElementsState = {
   tree: { [Tree.ROOT]: [] },
   elements: { [Tree.ROOT]: createElement(ElementType.Flex, Tree.ROOT) },
   focusedLeaf: ROOT_NODE,
+  focusedSide: FocusedSide.Left,
 }
 
 export function elements(
@@ -56,6 +65,8 @@ export function elements(
       return focusElement(state, action.element)
     case ElementsActionType.MoveFocus:
       return moveFocus(state, action.direction)
+    case ElementsActionType.VisualMoveFocus:
+      return visualMoveFocus(state, action.direction)
     // Adding/Removing Nodes
     case ElementsActionType.AddChildStart:
       return addChild(state, /* start */ true)
@@ -111,48 +122,203 @@ function focusElement(state: ElementsState, element: Tree.NodeRef): ElementsStat
 }
 
 function moveFocus(state: ElementsState, direction: Tree.Direction): ElementsState {
+  let { focusedSide } = state
   switch (direction) {
-    case Tree.Direction.Up: {
-      let { focusedLeaf } = state
-      if (!focusedLeaf.parent) return state
-      return { ...state, focusedLeaf: Vine.cutLeaves(focusedLeaf.parent) }
-    }
-    case Tree.Direction.Down: {
-      let { tree, focusedLeaf } = state
-      let firstChild = tree[focusedLeaf.logicalId][0]
-      if (!firstChild) return state
-      let newLeaf = { ...firstChild }
-      let newFocusedLeaf = Vine.replaceLeaves(focusedLeaf, newLeaf)
-      return { ...state, focusedLeaf: newFocusedLeaf }
-    }
-    case Tree.Direction.First:
-    case Tree.Direction.Last:
-    case Tree.Direction.Left:
-    case Tree.Direction.Right: {
-      let offset = direction === Tree.Direction.Left ? -1 : 1
-      let { tree, focusedLeaf } = state
-      let { physicalId, parent } = focusedLeaf
-      if (!parent) return state
+    case Tree.Direction.Up: return focusParent(state, focusedSide)
+    case Tree.Direction.Down: return focusFirstChild(state, focusedSide)
+    case Tree.Direction.First: return focusFirstSibling(state, focusedSide)
+    case Tree.Direction.Last: return focusLastSibling(state, focusedSide)
+    case Tree.Direction.Left: return focusPrevSibling(state, focusedSide)
+    case Tree.Direction.Right: return focusNextSibling(state, focusedSide)
+  }
+}
 
-      let siblings = tree[parent.logicalId]
-      let newFocusedIndex: number
+enum Axis {
+  Horizontal,
+  Vertical,
+}
 
-      if (direction === Tree.Direction.First) {
-        newFocusedIndex = 0
-      } else if (direction === Tree.Direction.Last) {
-        newFocusedIndex = siblings.length - 1
-      } else {
-        let index = Tree.indexOfPhysicalNode(siblings, physicalId)
-        newFocusedIndex = index + offset
-      }
+function visualMoveFocus(state: ElementsState, direction: Tree.Direction): ElementsState {
+  let { tree, focusedLeaf, focusedSide, elements } = state
+  // Handle this later.
+  if (!focusedLeaf.parent) {
+    return focusFirstChild(state, FocusedSide.Left)
+  }
 
-      let newFocusedElement = siblings[newFocusedIndex]
-      if (!newFocusedElement) return state
+  let contentAxis = getParentContentAxis(state)
+  let siblings = tree[focusedLeaf.parent.logicalId]
+  let index = Tree.indexOfPhysicalNode(siblings, focusedLeaf.physicalId)
 
-      let newFocusedLeaf = Vine.replaceLeaves(parent, { ...newFocusedElement })
-      return { ...state, focusedLeaf: newFocusedLeaf }
+  // Declare each of these separately for readability.
+  let onLeft = focusedSide === FocusedSide.Left
+  let onRight = focusedSide === FocusedSide.Right
+  let onTop = focusedSide === FocusedSide.Top
+  let onBottom = focusedSide === FocusedSide.Bottom
+  let moveUp = direction === Tree.Direction.Up
+  let moveRight = direction === Tree.Direction.Right
+  let moveDown = direction === Tree.Direction.Down
+  let moveLeft = direction === Tree.Direction.Left
+  let horizontalContent = contentAxis === Axis.Horizontal
+  let verticalContent = contentAxis === Axis.Vertical
+  let isFirstChild = index === 0
+  let isLastChild = index === siblings.length - 1
+  let hasChildren = tree[focusedLeaf.logicalId].length !== 0
+
+  let { Left, Right, Top, Bottom } = FocusedSide
+
+  if (onLeft   && moveUp    && horizontalContent                 ) return focusParent     (state, Top   )
+  if (onLeft   && moveUp    &&   verticalContent &&  isFirstChild) return focusParent     (state, Top   )
+  if (onLeft   && moveUp    &&   verticalContent && !isFirstChild) return focusPrevSibling(state, Left  )
+  if (onLeft   && moveRight &&                       hasChildren ) return focusFirstChild (state, Left  )
+  if (onLeft   && moveRight && horizontalContent &&  isLastChild ) return focusParent     (state, Right )
+  if (onLeft   && moveRight && horizontalContent && !isLastChild ) return focusNextSibling(state, Left  )
+  if (onLeft   && moveRight &&   verticalContent                 ) return focusParent     (state, Right )
+  if (onLeft   && moveDown  && horizontalContent                 ) return focusParent     (state, Bottom)
+  if (onLeft   && moveDown  &&   verticalContent &&  isLastChild ) return focusParent     (state, Bottom)
+  if (onLeft   && moveDown  &&   verticalContent && !isLastChild ) return focusNextSibling(state, Left  )
+  if (onLeft   && moveLeft  && horizontalContent &&  isFirstChild) return focusParent     (state, Left  )
+  if (onLeft   && moveLeft  && horizontalContent && !isFirstChild) return focusPrevSibling(state, Right )
+  if (onLeft   && moveLeft  &&   verticalContent                 ) return focusParent     (state, Left  )
+
+  if (onRight  && moveUp    && horizontalContent                 ) return focusParent     (state, Top   )
+  if (onRight  && moveUp    &&   verticalContent &&  isFirstChild) return focusParent     (state, Top   )
+  if (onRight  && moveUp    &&   verticalContent && !isFirstChild) return focusPrevSibling(state, Right )
+  if (onRight  && moveRight && horizontalContent &&  isLastChild ) return focusParent     (state, Right )
+  if (onRight  && moveRight && horizontalContent && !isLastChild ) return focusNextSibling(state, Left  )
+  if (onRight  && moveRight &&   verticalContent                 ) return focusParent     (state, Right )
+  if (onRight  && moveDown  && horizontalContent                 ) return focusParent     (state, Bottom)
+  if (onRight  && moveDown  &&   verticalContent &&  isLastChild ) return focusParent     (state, Bottom)
+  if (onRight  && moveDown  &&   verticalContent && !isLastChild ) return focusNextSibling(state, Right )
+  if (onRight  && moveLeft  &&                       hasChildren ) return focusLastChild  (state, Right )
+  if (onRight  && moveLeft  && horizontalContent &&  isFirstChild) return focusParent     (state, Left  )
+  if (onRight  && moveLeft  && horizontalContent && !isFirstChild) return focusPrevSibling(state, Right )
+  if (onRight  && moveLeft  &&   verticalContent                 ) return focusParent     (state, Left  )
+
+  if (onTop    && moveUp    && horizontalContent                 ) return focusParent     (state, Top   )
+  if (onTop    && moveUp    &&   verticalContent &&  isFirstChild) return focusParent     (state, Top   )
+  if (onTop    && moveUp    &&   verticalContent && !isFirstChild) return focusPrevSibling(state, Bottom)
+  if (onTop    && moveRight && horizontalContent &&  isLastChild ) return focusParent     (state, Right )
+  if (onTop    && moveRight && horizontalContent && !isLastChild ) return focusNextSibling(state, Top   )
+  if (onTop    && moveRight &&   verticalContent                 ) return focusParent     (state, Right )
+  if (onTop    && moveDown  &&                       hasChildren ) return focusFirstChild (state, Top   )
+  if (onTop    && moveDown  && horizontalContent                 ) return focusParent     (state, Bottom)
+  if (onTop    && moveDown  &&   verticalContent &&  isLastChild ) return focusParent     (state, Bottom)
+  if (onTop    && moveDown  &&   verticalContent && !isLastChild ) return focusNextSibling(state, Top)
+  if (onTop    && moveLeft  && horizontalContent &&  isFirstChild) return focusParent     (state, Left  )
+  if (onTop    && moveLeft  && horizontalContent && !isFirstChild) return focusPrevSibling(state, Top   )
+  if (onTop    && moveLeft  &&   verticalContent                 ) return focusParent     (state, Left  )
+
+  if (onBottom && moveUp    &&                       hasChildren ) return focusLastChild  (state, Bottom)
+  if (onBottom && moveUp    && horizontalContent                 ) return focusParent     (state, Top   )
+  if (onBottom && moveUp    &&   verticalContent &&  isFirstChild) return focusParent     (state, Top   )
+  if (onBottom && moveUp    &&   verticalContent && !isFirstChild) return focusPrevSibling(state, Bottom)
+  if (onBottom && moveRight && horizontalContent &&  isLastChild ) return focusParent     (state, Right )
+  if (onBottom && moveRight && horizontalContent && !isLastChild ) return focusNextSibling(state, Bottom)
+  if (onBottom && moveRight &&   verticalContent                 ) return focusParent     (state, Right )
+  if (onBottom && moveDown  && horizontalContent                 ) return focusParent     (state, Bottom)
+  if (onBottom && moveDown  &&   verticalContent &&  isLastChild ) return focusParent     (state, Bottom)
+  if (onBottom && moveDown  &&   verticalContent && !isLastChild ) return focusNextSibling(state, Top   )
+
+  if (onBottom && moveLeft  && horizontalContent &&  isFirstChild) return focusParent     (state, Left  )
+  if (onBottom && moveLeft  && horizontalContent && !isFirstChild) return focusPrevSibling(state, Bottom)
+  if (onBottom && moveLeft  &&   verticalContent                 ) return focusParent     (state, Left  )
+
+  return state
+}
+
+function getParentContentAxis(state: ElementsState): Axis {
+  let { focusedLeaf, elements } = state
+  if (!focusedLeaf.parent) return Axis.Vertical
+  let parentId = focusedLeaf.parent.logicalId
+  let parent = elements[parentId]
+
+  if (parent.styles.display === "flex") {
+    let flexDirection = parent.styles.flexDirection
+    if (!flexDirection || flexDirection === "row" || flexDirection === "row-reverse") {
+      return Axis.Horizontal
     }
   }
+
+  return Axis.Vertical
+}
+
+function focusParent(state: ElementsState, focusedSide: FocusedSide): ElementsState {
+  let { focusedLeaf } = state
+  if (!focusedLeaf.parent) return state
+  return {
+    ...state,
+    focusedSide,
+    focusedLeaf: Vine.cutLeaves(focusedLeaf.parent),
+  }
+}
+
+function focusPrevSibling(state: ElementsState, focusedSide: FocusedSide): ElementsState {
+  return focusSibling(state, focusedSide, Tree.Direction.Left)
+}
+
+function focusNextSibling(state: ElementsState, focusedSide: FocusedSide): ElementsState {
+  return focusSibling(state, focusedSide, Tree.Direction.Right)
+}
+
+function focusFirstSibling(state: ElementsState, focusedSide: FocusedSide): ElementsState {
+  return focusSibling(state, focusedSide, Tree.Direction.First)
+}
+
+function focusLastSibling(state: ElementsState, focusedSide: FocusedSide): ElementsState {
+  return focusSibling(state, focusedSide, Tree.Direction.Last)
+}
+
+function focusSibling(
+  state: ElementsState,
+  focusedSide: FocusedSide,
+  direction: Tree.Direction,
+): ElementsState {
+  let { tree, focusedLeaf } = state
+  let { physicalId, parent } = focusedLeaf
+  if (!parent) return state
+
+  let siblings = tree[parent.logicalId]
+  let newFocusedIndex: number
+
+  if (direction === Tree.Direction.First) {
+    newFocusedIndex = 0
+  } else if (direction === Tree.Direction.Last) {
+    newFocusedIndex = siblings.length - 1
+  } else {
+    let index = Tree.indexOfPhysicalNode(siblings, physicalId)
+    let offset = direction === Tree.Direction.Left ? -1 : 1
+    newFocusedIndex = index + offset
+  }
+
+  let newFocusedElement = siblings[newFocusedIndex]
+  if (!newFocusedElement) return state
+
+  let newFocusedLeaf = Vine.replaceLeaves(parent, { ...newFocusedElement })
+  return { ...state, focusedSide, focusedLeaf: newFocusedLeaf }
+}
+
+function focusFirstChild(state: ElementsState, focusedSide: FocusedSide): ElementsState {
+  return focusChild(state, focusedSide, Tree.Direction.First)
+}
+
+function focusLastChild(state: ElementsState, focusedSide: FocusedSide): ElementsState {
+  return focusChild(state, focusedSide, Tree.Direction.Last)
+}
+
+function focusChild(
+  state: ElementsState,
+  focusedSide: FocusedSide,
+  direction: Tree.Direction,
+): ElementsState {
+  let { tree, focusedLeaf } = state
+  let children = tree[focusedLeaf.logicalId]
+  if (children.length === 0) return state
+  let focusedChild = direction === Tree.Direction.First ?
+    children[0] :
+    children[children.length - 1]
+  let newLeaf = { ...focusedChild }
+  let newFocusedLeaf = Vine.replaceLeaves(focusedLeaf, newLeaf)
+  return { ...state, focusedSide, focusedLeaf: newFocusedLeaf }
 }
 
 function addChild(state: ElementsState, start: boolean): ElementsState {

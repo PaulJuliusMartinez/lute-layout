@@ -64,7 +64,19 @@ FOCUS_WIDTH = 4px
     left 0 - FOCUS_WIDTH
     border-width FOCUS_WIDTH
     border-style dashed
-    border-color white
+    border-color black
 
 .focused-element::after
-  border-color white
+  border-color black
+
+.focused-element.focused-top::after
+  border-top-style solid
+
+.focused-element.focused-right::after
+  border-right-style solid
+
+.focused-element.focused-bottom::after
+  border-bottom-style solid
+
+.focused-element.focused-left::after
+  border-left-style solid

@@ -13,6 +13,7 @@ export enum ElementsActionType {
 
   FocusElement,
   MoveFocus,
+  VisualMoveFocus,
 
   // Tree modifications
 
@@ -77,7 +78,7 @@ interface FocusElementAction {
 }
 
 interface MoveFocusAction {
-  type: ElementsActionType.MoveFocus
+  type: ElementsActionType.MoveFocus | ElementsActionType.VisualMoveFocus
   direction: Direction
 }
 
@@ -111,6 +112,15 @@ const moveFocusDown = createMoveFocusActionCreator(Direction.Down)
 const moveFocusLeft = createMoveFocusActionCreator(Direction.Left)
 const moveFocusRight = createMoveFocusActionCreator(Direction.Right)
 const moveFocusToLast = createMoveFocusActionCreator(Direction.Last)
+
+function createVisualMoveFocusActionCreator(direction: Direction): () => MoveFocusAction {
+  return () => ({ type: ElementsActionType.VisualMoveFocus, direction })
+}
+
+const visualMoveFocusUp = createVisualMoveFocusActionCreator(Direction.Up)
+const visualMoveFocusDown = createVisualMoveFocusActionCreator(Direction.Down)
+const visualMoveFocusLeft = createVisualMoveFocusActionCreator(Direction.Left)
+const visualMoveFocusRight = createVisualMoveFocusActionCreator(Direction.Right)
 
 function createModifyActionCreator(eat: ElementsActionType): () => ModifyTreeAction {
   return () => ({ type: eat as any})
@@ -154,6 +164,11 @@ export {
   moveFocusLeft,
   moveFocusRight,
   moveFocusToLast,
+
+  visualMoveFocusUp,
+  visualMoveFocusDown,
+  visualMoveFocusLeft,
+  visualMoveFocusRight,
 
   addChildStart,
   addChildEnd,

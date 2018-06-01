@@ -3,6 +3,7 @@ import { connect } from "react-redux"
 
 import { Element } from "element"
 import { focusElement } from "elements-actions"
+import { FocusedSide } from "elements-reducer"
 import { Dispatch, Store } from "store"
 import * as Tree from "tree"
 import * as Vine from "data-structures/vine"
@@ -17,6 +18,7 @@ interface ConnectStateProps {
   element: Element
   children: Tree.Node[]
   focusVine: Tree.NodeRef | undefined
+  focusedSide: FocusedSide
 }
 
 interface ConnectDispatchProps {
@@ -35,6 +37,7 @@ function mapStateToProps(store: Store, ownProps: OwnProps): ConnectStateProps {
   return {
     children,
     focusVine,
+    focusedSide: elements.focusedSide,
     element: elements.elements[ownProps.logicalId],
   }
 }
@@ -106,7 +109,7 @@ class TreeElement extends React.Component<Props, State> {
   }
 
   render() {
-    let { logicalId, physicalId, element, children, focusVine } = this.props
+    let { logicalId, physicalId, element, children, focusVine, focusedSide } = this.props
     let content = children.length === 0 ? element.content : this.formatChildren()
 
     let onFocusPath = Boolean(focusVine)
@@ -114,7 +117,13 @@ class TreeElement extends React.Component<Props, State> {
 
     let className = ""
     if (onFocusPath) className = "focus-path"
-    if (focused) className += " focused-element"
+    if (focused) {
+      className += " focused-element"
+      if (focusedSide === FocusedSide.Top) className += " focused-top"
+      if (focusedSide === FocusedSide.Right) className += " focused-right"
+      if (focusedSide === FocusedSide.Bottom) className += " focused-bottom"
+      if (focusedSide === FocusedSide.Left) className += " focused-left"
+    }
 
     return (
       <div

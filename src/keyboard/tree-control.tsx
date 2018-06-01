@@ -47,10 +47,10 @@ const KEY_FN_MAP: { [fn: string]: any } = {
     $: "moveToLast",
   },
 
-  h: hv("moveFocusLeft", "moveFocusUp"),
-  j: hv("moveFocusDown", "moveFocusRight"),
-  k: hv("moveFocusUp", "moveFocusLeft"),
-  l: hv("moveFocusRight", "moveFocusDown"),
+  h: "visualMoveFocusLeft",
+  j: "visualMoveFocusDown",
+  k: "visualMoveFocusUp",
+  l: "visualMoveFocusRight",
 
   ArrowLeft: hv("moveFocusLeft", "moveFocusUp"),
   ArrowDown: hv("moveFocusDown", "moveFocusRight"),
@@ -115,6 +115,11 @@ function mapDispatchToProps(dispatch: Dispatch): ConnectDispatchProps {
       moveFocusLeft: () => { dispatch(TreeActions.moveFocusLeft()) },
       moveFocusRight: () => { dispatch(TreeActions.moveFocusRight()) },
       moveFocusToLast: () => { dispatch(TreeActions.moveFocusToLast()) },
+
+      visualMoveFocusUp: () => { dispatch(TreeActions.visualMoveFocusUp()) },
+      visualMoveFocusDown: () => { dispatch(TreeActions.visualMoveFocusDown()) },
+      visualMoveFocusLeft: () => { dispatch(TreeActions.visualMoveFocusLeft()) },
+      visualMoveFocusRight: () => { dispatch(TreeActions.visualMoveFocusRight()) },
   }
 }
 

@@ -18,7 +18,7 @@ export interface Element {
 const DEFAULT_CHILD_SETTINGS: CSS.Properties = {
   margin: "4px",
   borderWidth: "4px",
-  borderColor: "#808080",
+  borderColor: "#eee",
   borderStyle: "solid",
   padding: "4px",
 }
