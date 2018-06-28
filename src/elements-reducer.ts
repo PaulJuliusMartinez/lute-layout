@@ -140,14 +140,6 @@ enum Axis {
 
 function visualMoveFocus(state: ElementsState, direction: Tree.Direction): ElementsState {
   let { tree, focusedLeaf, focusedSide, elements } = state
-  // Handle this later.
-  if (!focusedLeaf.parent) {
-    return focusFirstChild(state, FocusedSide.Left)
-  }
-
-  let contentAxis = getParentContentAxis(state)
-  let siblings = tree[focusedLeaf.parent.logicalId]
-  let index = Tree.indexOfPhysicalNode(siblings, focusedLeaf.physicalId)
 
   // Declare each of these separately for readability.
   let onLeft = focusedSide === FocusedSide.Left
@@ -158,13 +150,38 @@ function visualMoveFocus(state: ElementsState, direction: Tree.Direction): Eleme
   let moveRight = direction === Tree.Direction.Right
   let moveDown = direction === Tree.Direction.Down
   let moveLeft = direction === Tree.Direction.Left
+
+  let { Left, Right, Top, Bottom } = FocusedSide
+
+  // Handle this later.
+  if (!focusedLeaf.parent) {
+    if (onLeft   && moveRight) return focusFirstChild(state, Left  )
+    if (onLeft   && moveUp   ) return focusSide      (state, Top   )
+    if (onLeft   && moveDown ) return focusSide      (state, Bottom)
+
+    if (onTop    && moveDown ) return focusFirstChild(state, Top   )
+    if (onTop    && moveLeft ) return focusSide      (state, Left  )
+    if (onTop    && moveRight) return focusSide      (state, Right )
+
+    if (onRight  && moveLeft ) return focusLastChild (state, Right )
+    if (onRight  && moveUp   ) return focusSide      (state, Top   )
+    if (onRight  && moveDown ) return focusSide      (state, Bottom)
+
+    if (onBottom && moveUp   ) return focusLastChild (state, Bottom)
+    if (onBottom && moveLeft ) return focusSide      (state, Left  )
+    if (onBottom && moveRight) return focusSide      (state, Right )
+    return state
+  }
+
+  let contentAxis = getParentContentAxis(state)
+  let siblings = tree[focusedLeaf.parent.logicalId]
+  let index = Tree.indexOfPhysicalNode(siblings, focusedLeaf.physicalId)
+
   let horizontalContent = contentAxis === Axis.Horizontal
   let verticalContent = contentAxis === Axis.Vertical
   let isFirstChild = index === 0
   let isLastChild = index === siblings.length - 1
   let hasChildren = tree[focusedLeaf.logicalId].length !== 0
-
-  let { Left, Right, Top, Bottom } = FocusedSide
 
   if (onLeft   && moveUp    && horizontalContent                 ) return focusParent     (state, Top   )
   if (onLeft   && moveUp    &&   verticalContent &&  isFirstChild) return focusParent     (state, Top   )
@@ -218,7 +235,6 @@ function visualMoveFocus(state: ElementsState, direction: Tree.Direction): Eleme
   if (onBottom && moveDown  && horizontalContent                 ) return focusParent     (state, Bottom)
   if (onBottom && moveDown  &&   verticalContent &&  isLastChild ) return focusParent     (state, Bottom)
   if (onBottom && moveDown  &&   verticalContent && !isLastChild ) return focusNextSibling(state, Top   )
-
   if (onBottom && moveLeft  && horizontalContent &&  isFirstChild) return focusParent     (state, Left  )
   if (onBottom && moveLeft  && horizontalContent && !isFirstChild) return focusPrevSibling(state, Bottom)
   if (onBottom && moveLeft  &&   verticalContent                 ) return focusParent     (state, Left  )
@@ -240,6 +256,10 @@ function getParentContentAxis(state: ElementsState): Axis {
   }
 
   return Axis.Vertical
+}
+
+function focusSide(state: ElementsState, focusedSide: FocusedSide): ElementsState {
+  return { ...state, focusedSide }
 }
 
 function focusParent(state: ElementsState, focusedSide: FocusedSide): ElementsState {
